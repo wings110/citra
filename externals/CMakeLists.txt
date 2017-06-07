@@ -99,6 +99,10 @@ if (USE_DISCORD_PRESENCE)
     target_include_directories(discord-rpc INTERFACE ./discord-rpc/include)
 endif()
 
+# LibRetro
+add_library(libretro INTERFACE)
+target_include_directories(libretro INTERFACE ./libretro)
+
 if (ENABLE_WEB_SERVICE)
     find_package(OpenSSL 1.1)
     if (OPENSSL_FOUND)
