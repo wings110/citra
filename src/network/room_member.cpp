@@ -8,6 +8,9 @@
 #include <mutex>
 #include <set>
 #include <thread>
+#ifdef HAVE_LIBNX
+#include <sys/select.h>
+#endif
 #include "common/assert.h"
 #include "enet/enet.h"
 #include "network/packet.h"
