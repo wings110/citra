@@ -203,6 +203,8 @@ void EmuWindow_LibRetro::UpdateLayout() {
     height = baseY;
 
     UpdateCurrentFramebufferLayout(baseX, baseY);
+
+    doCleanFrame = true;
 }
 
 bool EmuWindow_LibRetro::ShouldDeferRendererInit() {

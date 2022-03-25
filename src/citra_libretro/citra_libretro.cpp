@@ -175,7 +175,7 @@ void UpdateSettings() {
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2, "ZR"},
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start"},
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select"},
-        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3, "Home"},
+        {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3, "Home/Swap screens"},
         {0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R3, "Touch Screen Touch"},
         {0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X, "Circle Pad X"},
         {0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Circle Pad Y"},
@@ -422,6 +422,24 @@ void retro_run() {
     // Check to see if we actually have any config updates to process.
     if (LibRetro::HasUpdatedConfig()) {
         UpdateSettings();
+    }
+
+    // Check if the screen swap button is pressed
+    static bool screen_swap_btn_state = false;
+    bool screen_swap_btn = !!LibRetro::CheckInput(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3);
+    if(screen_swap_btn != screen_swap_btn_state)
+    {
+        if(screen_swap_btn)
+            Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") != "Bottom";
+        else
+            Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") == "Bottom";
+
+        Settings::Apply();
+
+        // Update the framebuffer sizing.
+        emu_instance->emu_window->UpdateLayout();
+
+        screen_swap_btn_state = screen_swap_btn;
     }
 
     // We can't assume that the frontend has been nice and preserved all OpenGL settings. Reset.
