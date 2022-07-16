@@ -1,35 +1,66 @@
 .core-defs:
   variables:
+    JNI_PATH: .
     CORENAME: citra
 
 variables:
   STATIC_RETROARCH_BRANCH: master
   GIT_SUBMODULE_STRATEGY: recursive
 
+# Inclusion templates, required for the build to work
 include:
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/libnx-static.yml'
+  ################################## DESKTOPS ##############################  ##
+  # Windows 64-bit
   - project: 'libretro-infrastructure/ci-templates'
     file: '/windows-x64-msvc19-msys2.yml'
+
+  # Linux 64-bit
   - project: 'libretro-infrastructure/ci-templates'
     file: '/linux-x64.yml'
 
+  ################################## CELLULAR ##############################  ##
+  # Android
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/android-jni.yml'
+
+  ################################## CONSOLES ##############################  ##
+
+  # Nintendo Switch
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/libnx-static.yml'
+
+# Stages for building
 stages:
   - build-prepare
   - build-shared
   - build-static
-  - test
 
+##############################################################################
+#################################### STAGES ##################################
+##############################################################################
+#
+################################### DESKTOPS #################################
+# Windows 64-bit
+libretro-build-windows-x64:
+  extends:
+    - .core-defs
+    - .libretro-windows-x64-msvc19-msys2-make-default
+
+# Linux 64-bit
 libretro-build-linux-x64:
   image: $CI_SERVER_HOST:5050/libretro-infrastructure/libretro-build-amd64-ubuntu:latest
   extends:
     - .core-defs
     - .libretro-linux-x64-make-default
 
-libretro-build-windows-x64:
+################################### CELLULAR #################################
+# Android ARMv8a
+android-arm64-v8a:
   extends:
+    - .libretro-android-jni-arm64-v8a
     - .core-defs
-    - .libretro-windows-x64-msvc19-msys2-make-default
+
+################################### CONSOLES #################################
 
 # libretro-build-libnx-aarch64:
 #   extends:
