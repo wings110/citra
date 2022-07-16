@@ -57,7 +57,7 @@ HAVE_RPC := 1
 SRC_DIR := ../src
 EXTERNALS_DIR := ../externals
 
-LOCAL_MODULE := citra
+LOCAL_MODULE := retro
 
 DEFINES += -DARCHITECTURE_ARM64 \
            -DDYNARMIC_IGNORE_ASSERTS \
