@@ -116,8 +116,25 @@ void LibRetro::OnConfigureEnvironment() {
     LibRetro::SetVFSCallback(&vfs_iface_info);
 #endif
 
+    std::string cpuScale = "CPU Clock scale; ";
+    static const int MAX_CPU_SCALE = 400;
+    static const int MIN_CPU_SCALE = 5;
+    static const int DEFAULT_CPU_SCALE = 100;
+
+    cpuScale.append(std::to_string(DEFAULT_CPU_SCALE) + "% (Default)|");
+
+    for (int i = MIN_CPU_SCALE; i <= MAX_CPU_SCALE; i += 5) {
+        if (i == DEFAULT_CPU_SCALE) continue;
+
+        cpuScale.append(std::to_string(i) + "%");
+
+        if (i != MAX_CPU_SCALE)
+         cpuScale.append("|");
+    }
+
     static const retro_variable values[] = {
         {"citra_use_cpu_jit", "Enable CPU JIT; enabled|disabled"},
+        {"citra_cpu_scale", cpuScale.c_str()},
         {"citra_use_hw_renderer", "Enable hardware renderer; enabled|disabled"},
         {"citra_use_shader_jit", "Enable shader JIT; enabled|disabled"},
         {"citra_use_hw_shaders", "Enable hardware shaders; enabled|disabled"},
@@ -210,7 +227,17 @@ void UpdateSettings() {
     // For our other settings, import them from LibRetro.
     Settings::values.use_cpu_jit =
         LibRetro::FetchVariable("citra_use_cpu_jit", "enabled") == "enabled";
-    Settings::values.cpu_clock_percentage = 100;
+
+    auto cpuScaling = LibRetro::FetchVariable("citra_cpu_scale", "100%");
+    auto cpuScalingIndex = cpuScaling.find('%');
+    if (cpuScalingIndex == std::string::npos) {
+        LOG_ERROR(Frontend, "Failed to parse cpu scale!");
+        Settings::values.cpu_clock_percentage = 100;
+    } else {
+        int scale = stoi(cpuScaling.substr(0, cpuScalingIndex));
+        Settings::values.cpu_clock_percentage = scale;
+    }
+
     Settings::values.use_hw_renderer =
         LibRetro::FetchVariable("citra_use_hw_renderer", "enabled") == "enabled";
     Settings::values.use_hw_shader =
