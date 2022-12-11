@@ -141,7 +141,7 @@ void EmuWindow_LibRetro::UpdateLayout() {
         } else { // Top screen visible
             baseX = Core::kScreenTopWidth;
             baseY = Core::kScreenTopHeight;
-            enableEmulatedPointer = false;
+           // enableEmulatedPointer = false;
         }
         baseX *= scaling;
         baseY *= scaling;
