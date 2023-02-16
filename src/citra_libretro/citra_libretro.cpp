@@ -149,6 +149,7 @@ void LibRetro::OnConfigureEnvironment() {
         {"citra_layout_option", "Screen layout positioning; Default Top-Bottom Screen|Single "
                                 "Screen Only|Large Screen, Small Screen|Side by Side"},
         {"citra_swap_screen", "Prominent 3DS screen; Top|Bottom"},
+        {"citra_swap_screen_mode", "Swap Screen Mode; Toggle|Hold"},
         {"citra_analog_function",
          "Right analog function; C-Stick and Touchscreen Pointer|Touchscreen Pointer|C-Stick"},
         {"citra_deadzone", "Emulated pointer deadzone (%); 15|20|25|30|35|0|5|10"},
@@ -251,6 +252,8 @@ void UpdateSettings() {
     Settings::values.is_new_3ds =
         LibRetro::FetchVariable("citra_is_new_3ds", "Old 3DS") == "New 3DS";
     Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") == "Bottom";
+    LibRetro::settings.toggle_swap_screen =
+        LibRetro::FetchVariable("citra_swap_screen_mode", "Toggle") == "Toggle";
     Settings::values.use_gdbstub =
         LibRetro::FetchVariable("citra_use_gdbstub", "disabled") == "enabled";
 #if defined(USING_GLES)
@@ -463,13 +466,27 @@ void retro_run() {
 
     // Check if the screen swap button is pressed
     static bool screen_swap_btn_state = false;
+    static bool screen_swap_toggled = false;
     bool screen_swap_btn = !!LibRetro::CheckInput(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3);
-    if(screen_swap_btn != screen_swap_btn_state)
+    if (screen_swap_btn != screen_swap_btn_state)
     {
-        if(screen_swap_btn)
-            Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") != "Bottom";
+        if (LibRetro::settings.toggle_swap_screen)
+        {
+            if (!screen_swap_btn_state)
+                screen_swap_toggled = !screen_swap_toggled;
+
+            if (screen_swap_toggled)
+                Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") != "Bottom";
+            else
+                Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") == "Bottom";
+        }
         else
-            Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") == "Bottom";
+        {
+            if (screen_swap_btn)
+                Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") != "Bottom";
+            else
+                Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") == "Bottom";
+        }
 
         Settings::Apply();
 
