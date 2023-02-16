@@ -27,6 +27,8 @@ struct CoreSettings {
 
     bool render_touchscreen;
 
+    bool toggle_swap_screen;
+
 } extern settings;
 
 } // namespace LibRetro
