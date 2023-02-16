@@ -173,11 +173,7 @@ void EmuWindow_LibRetro::UpdateLayout() {
         break;
     case Settings::LayoutOption::Default:
     default:
-        if (swapped) { // Bottom screen on top
-            baseX = Core::kScreenBottomWidth;
-        } else { // Top screen on top
-            baseX = Core::kScreenTopWidth;
-        }
+        baseX = Core::kScreenTopWidth;
         baseY = Core::kScreenTopHeight + Core::kScreenBottomHeight;
         baseX *= scaling;
         baseY *= scaling;
