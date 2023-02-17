@@ -62,7 +62,7 @@ void EmuWindow_LibRetro::SwapBuffers() {
 
     ResetGLState();
 
-    if (tracker != nullptr) {
+    if (enableEmulatedPointer) {
         tracker->Render(width, height);
     }
 
@@ -91,7 +91,7 @@ void EmuWindow_LibRetro::PollEvents() {
 
     // TODO: Poll for right click for motion emu
 
-    if (tracker != nullptr) {
+    if (enableEmulatedPointer) {
         tracker->Update(width, height, GetFramebufferLayout().bottom_screen);
 
         if (tracker->IsPressed()) {
@@ -141,7 +141,7 @@ void EmuWindow_LibRetro::UpdateLayout() {
         } else { // Top screen visible
             baseX = Core::kScreenTopWidth;
             baseY = Core::kScreenTopHeight;
-           // enableEmulatedPointer = false;
+            enableEmulatedPointer = false;
         }
         baseX *= scaling;
         baseY *= scaling;
@@ -224,9 +224,7 @@ bool EmuWindow_LibRetro::HasSubmittedFrame() {
 }
 
 void EmuWindow_LibRetro::CreateContext() {
-    if (enableEmulatedPointer) {
-        tracker = std::make_unique<LibRetro::Input::MouseTracker>();
-    }
+    tracker = std::make_unique<LibRetro::Input::MouseTracker>();
 
     doCleanFrame = true;
 }
