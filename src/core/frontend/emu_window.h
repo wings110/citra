@@ -129,7 +129,7 @@ public:
  * - DO NOT TREAT THIS CLASS AS A GUI TOOLKIT ABSTRACTION LAYER. That's not what it is. Please
  *   re-read the upper points again and think about it if you don't see this.
  */
-class EmuWindow {
+class EmuWindow : public GraphicsContext {
 public:
     class TouchState;
 
@@ -159,17 +159,21 @@ public:
         float render_surface_scale = 1.0f;
     };
 
-    /// Swap buffers to display the next frame
-    virtual void SwapBuffers() = 0;
-
-    /// Polls window events
+        /// Polls window events
     virtual void PollEvents() = 0;
 
-    /// Makes the graphics context current for the caller thread
-    virtual void MakeCurrent() = 0;
-
-    /// Releases (dunno if this is the "right" word) the GLFW context from the caller thread
-    virtual void DoneCurrent() = 0;
+    /**
+     * Returns a GraphicsContext that the frontend provides that is shared with the emu window. This
+     * context can be used from other threads for background graphics computation. If the frontend
+     * is using a graphics backend that doesn't need anything specific to run on a different thread,
+     * then it can use a stubbed implemenation for GraphicsContext.
+     *
+     * If the return value is null, then the core should assume that the frontend cannot provide a
+     * Shared Context
+     */
+    virtual std::unique_ptr<GraphicsContext> CreateSharedContext() const {
+        return nullptr;
+    }
 
     /**
      * Save current GraphicsContext.
@@ -243,16 +247,23 @@ public:
      */
     void UpdateCurrentFramebufferLayout(unsigned width, unsigned height,
                                         bool is_portrait_mode = {});
+
+    std::unique_ptr<TextureMailbox> mailbox = nullptr;
+
     /**
      * Requests for a frontend to setup a framebuffer.
      */
-    virtual void SetupFramebuffer() = 0;
+    void SetupFramebuffer() {}
 
     /// Flags that the Emulation Window is not ready to support a hardware context yet.
-    virtual bool ShouldDeferRendererInit() = 0;
+    bool ShouldDeferRendererInit() {
+        return false;
+    }
 
     /// Flags that the framebuffer should be cleared.
-    virtual bool NeedsClearing() const = 0;
+    virtual bool NeedsClearing() const {
+        return true;
+    }
 
 protected:
     EmuWindow();

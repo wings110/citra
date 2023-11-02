@@ -517,9 +517,9 @@ void ShaderDiskCache::SaveVirtualPrecompiledFile() {
         Common::Compression::CompressDataZSTDDefault(decompressed_precompiled_cache);
 
     const auto precompiled_path{GetPrecompiledPath()};
-    const bool existed = FileUtil::Exists(precompiled_path);
 
 #ifdef HAVE_LIBRETRO_VFS
+    const bool existed = FileUtil::Exists(precompiled_path);
     if (!existed) {
         FileUtil::CreateEmptyFile(precompiled_path);
     }

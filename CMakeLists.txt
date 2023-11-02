@@ -17,7 +17,7 @@ include(CMakeDependentOption)
 
 project(citra LANGUAGES C CXX ASM)
 
-option(ENABLE_LIBRETRO "Enable the LibRetro frontend" OFF)
+option(ENABLE_LIBRETRO "Enable the LibRetro frontend" ON)
 
 # Some submodules like to pick their own default build type if not specified.
 # Make sure we default to Release build type always, unless the generator has custom types.
@@ -61,23 +61,23 @@ else()
     set(DEFAULT_ENABLE_LTO OFF)
 endif()
 
-option(ENABLE_SDL2 "Enable using SDL2" ON)
+option(ENABLE_SDL2 "Enable using SDL2" OFF)
 CMAKE_DEPENDENT_OPTION(ENABLE_SDL2_FRONTEND "Enable the SDL2 frontend" ON "ENABLE_SDL2;NOT ANDROID AND NOT IOS" OFF)
 option(USE_SYSTEM_SDL2 "Use the system SDL2 lib (instead of the bundled one)" OFF)
 
 # Set bundled qt as dependent options.
-option(ENABLE_QT "Enable the Qt frontend" ON)
+option(ENABLE_QT "Enable the Qt frontend" OFF)
 option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
 CMAKE_DEPENDENT_OPTION(ENABLE_QT_UPDATER "Enable built-in updater for the Qt frontend" ON "NOT IOS" OFF)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_TESTS "Enable generating tests executable" ON "NOT IOS" OFF)
 CMAKE_DEPENDENT_OPTION(ENABLE_DEDICATED_ROOM "Enable generating dedicated room executable" ON "NOT ANDROID AND NOT IOS" OFF)
 
-option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
-option(ENABLE_SCRIPTING "Enable RPC server for scripting" ON)
+option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" OFF)
+option(ENABLE_SCRIPTING "Enable RPC server for scripting" OFF)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_CUBEB "Enables the cubeb audio backend" ON "NOT IOS" OFF)
-option(ENABLE_OPENAL "Enables the OpenAL audio backend" ON)
+option(ENABLE_OPENAL "Enables the OpenAL audio backend" OFF)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_LIBUSB "Enable libusb for GameCube Adapter support" ON "NOT IOS" OFF)
 
