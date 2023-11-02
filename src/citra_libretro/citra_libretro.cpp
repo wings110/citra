@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <common/file_util.h>
-//#include <boost/algorithm/string/predicate.hpp>
 
 #include "glad/glad.h"
 #include "libretro.h"
@@ -73,8 +72,7 @@ void retro_init() {
     // Check to see if the frontend is providing us with logging functionality
     auto callback = LibRetro::GetLoggingBackend();
     if (callback != nullptr) {
-        Common::Log::Initialize(callback);
-        Common::Log::Start();
+        Common::Log::LibRetroStart(callback);
     }
 
     LOG_DEBUG(Frontend, "Initialising core...");
@@ -85,10 +83,10 @@ void retro_init() {
     }
 
     // Setup default, stub handlers for HLE applets
-    Frontend::RegisterDefaultApplets();
+    Frontend::RegisterDefaultApplets(Core::System::GetInstance());
 
     // Register generic image interface
-    Core::System::GetInstance().RegisterImageInterface(std::make_shared<ImageInterface>());
+    Core::System::GetInstance().RegisterImageInterface(std::make_shared<Frontend::ImageInterface>());
 
     LibRetro::Input::Init();
 }
@@ -134,13 +132,12 @@ void LibRetro::OnConfigureEnvironment() {
     static const retro_variable values[] = {
         {"citra_use_cpu_jit", "Enable CPU JIT; enabled|disabled"},
         {"citra_cpu_scale", cpuScale.c_str()},
-        {"citra_use_hw_renderer", "Enable hardware renderer; enabled|disabled"},
         {"citra_use_shader_jit", "Enable shader JIT; enabled|disabled"},
         {"citra_use_hw_shaders", "Enable hardware shaders; enabled|disabled"},
         {"citra_use_hw_shader_cache", "Save hardware shader cache to disk; enabled|disabled"},
         {"citra_use_acc_geo_shaders", "Enable accurate geometry shaders (only for H/W shaders); enabled|disabled"},
         {"citra_use_acc_mul", "Enable accurate shaders multiplication (only for H/W shaders); enabled|disabled"},
-        {"citra_texture_filter", "Texture filter type; none|Anime4K Ultrafast|Bicubic|ScaleForce|xBRZ freescale"},
+        {"citra_texture_filter", "Texture filter type; none|Anime4K Ultrafast|Bicubic|NearestNeighbor|ScaleForce|xBRZ freescale|MMPX"},
         {"citra_custom_textures", "Enable custom textures; disabled|enabled"},
         {"citra_dump_textures", "Dump textures; disabled|enabled"},
         {"citra_resolution_factor",
@@ -183,6 +180,17 @@ uintptr_t LibRetro::GetFramebuffer() {
     return emu_instance->hw_render.get_current_framebuffer();
 }
 
+Settings::TextureFilter GetTextureFilter(std::string name) {
+    if (name == "Anime4K Ultrafast") return Settings::TextureFilter::Anime4K;
+    if (name == "Bicubic") return Settings::TextureFilter::Bicubic;
+    if (name == "NearestNeighbor") return Settings::TextureFilter::NearestNeighbor;
+    if (name == "ScaleForce") return Settings::TextureFilter::ScaleForce;
+    if (name == "xBRZ freescale") return Settings::TextureFilter::xBRZ;
+    if (name == "MMPX") return Settings::TextureFilter::MMPX;
+
+    return Settings::TextureFilter::None;
+}
+
 /**
  * Updates Citra's settings with Libretro's.
  */
@@ -216,12 +224,11 @@ void UpdateSettings() {
     // Some settings cannot be set by LibRetro frontends - options have to be
     // finite. Make assumptions.
     Settings::values.log_filter = "*:Info";
-    Settings::values.sink_id = "libretro";
+    Settings::values.output_type = AudioCore::SinkType::LibRetro;
     Settings::values.volume = 1.0f;
 
     // We don't need these, as this is the frontend's responsibility.
     Settings::values.enable_audio_stretching = false;
-    Settings::values.use_frame_limit_alternate = true;
     Settings::values.frame_limit = 10000;
 
     // For our other settings, import them from LibRetro.
@@ -238,8 +245,6 @@ void UpdateSettings() {
         Settings::values.cpu_clock_percentage = scale;
     }
 
-    Settings::values.use_hw_renderer =
-        LibRetro::FetchVariable("citra_use_hw_renderer", "enabled") == "enabled";
     Settings::values.use_hw_shader =
             LibRetro::FetchVariable("citra_use_hw_shaders", "enabled") == "enabled";
     Settings::values.use_shader_jit =
@@ -260,8 +265,8 @@ void UpdateSettings() {
 #else
     Settings::values.use_gles = false;
 #endif
-    Settings::values.texture_filter_name =
-        LibRetro::FetchVariable("citra_texture_filter", "none");
+    Settings::values.texture_filter =
+        GetTextureFilter(LibRetro::FetchVariable("citra_texture_filter", "none"));
     Settings::values.dump_textures =
         LibRetro::FetchVariable("citra_dump_textures", "disabled") == "enabled";
     Settings::values.custom_textures =
@@ -431,7 +436,7 @@ void UpdateSettings() {
         }
 
         if (!target_dir.empty()) {
-            if (!boost::algorithm::ends_with(target_dir, "/"))
+            if (!target_dir.ends_with("/"))
                 target_dir += "/";
 
             target_dir += "Citra/";
@@ -441,7 +446,6 @@ void UpdateSettings() {
                 LOG_ERROR(Frontend, "Failed to create \"{}\". Using Citra's default paths.", target_dir);
             } else {
                 FileUtil::SetUserPath(target_dir);
-                FileUtil::GetUserPath(FileUtil::UserPath::RootDir);
                 const auto& target_dir_result = FileUtil::GetUserPath(FileUtil::UserPath::UserDir);
                 LOG_INFO(Frontend, "User dir set to \"{}\".", target_dir_result);
             }
@@ -451,7 +455,7 @@ void UpdateSettings() {
     // Update the framebuffer sizing.
     emu_instance->emu_window->UpdateLayout();
 
-    Settings::Apply();
+    Core::System::GetInstance().ApplySettings();
 }
 
 /**
@@ -487,7 +491,7 @@ void retro_run() {
                 Settings::values.swap_screen = LibRetro::FetchVariable("citra_swap_screen", "Top") == "Bottom";
         }
 
-        Settings::Apply();
+        Core::System::GetInstance().ApplySettings();
 
         // Update the framebuffer sizing.
         emu_instance->emu_window->UpdateLayout();
@@ -559,12 +563,7 @@ void context_reset() {
                   "Likely memory leak: context_destroy() was not called before context_reset()!");
     }
 
-    VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(*emu_instance->emu_window);
-    if (VideoCore::g_renderer->Init() == VideoCore::ResultStatus::Success) {
-        LOG_DEBUG(Render, "initialized OK");
-    } else {
-        LOG_ERROR(Render, "initialization failed!");
-    }
+    VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
 
     if(Settings::values.use_disk_shader_cache) {
         Core::System::GetInstance().Renderer().Rasterizer()->LoadDiskResources(false, nullptr);
@@ -575,16 +574,14 @@ void context_reset() {
 }
 
 void context_destroy() {
-    if (VideoCore::g_renderer != nullptr) {
-        VideoCore::g_renderer->ShutDown();
-    }
-
     emu_instance->emu_window->DestroyContext();
 }
 
 void retro_reset() {
     Core::System::GetInstance().Shutdown();
-    Core::System::GetInstance().Load(*emu_instance->emu_window, LibRetro::settings.file_path);
+    if (Core::System::GetInstance().Load(*emu_instance->emu_window, LibRetro::settings.file_path) != Core::System::ResultStatus::Success) {
+        LOG_ERROR(Frontend, "Unable lo load on retro_reset");
+    }
     context_reset(); // Force the renderer to appear
 }
 
@@ -665,6 +662,10 @@ bool retro_load_game(const struct retro_game_info* info) {
         LOG_CRITICAL(Frontend, "Error while loading ROM: The ROM format is not supported.");
         LibRetro::DisplayMessage("Error while loading ROM: The ROM format is not supported.");
         return false;
+    case Core::System::ResultStatus::ErrorLoader_ErrorGbaTitle:
+        LOG_CRITICAL(Frontend, "Error loading the specified application as it is GBA Virtual Console");
+        LibRetro::DisplayMessage("Error loading the specified application as it is GBA Virtual Console");
+        return false;
     case Core::System::ResultStatus::ErrorNotInitialized:
         LOG_CRITICAL(Frontend, "CPUCore not initialized");
         LibRetro::DisplayMessage("CPUCore not initialized");
@@ -672,10 +673,6 @@ bool retro_load_game(const struct retro_game_info* info) {
     case Core::System::ResultStatus::ErrorSystemMode:
         LOG_CRITICAL(Frontend, "Failed to determine system mode!");
         LibRetro::DisplayMessage("Failed to determine system mode!");
-        return false;
-    case Core::System::ResultStatus::ErrorVideoCore:
-        LOG_CRITICAL(Frontend, "VideoCore not initialized");
-        LibRetro::DisplayMessage("VideoCore not initialized");
         return false;
     case Core::System::ResultStatus::Success:
         break; // Expected case

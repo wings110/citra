@@ -204,7 +204,7 @@ void System::LoadState(u32 slot) {
     ia&* this;
 }
 
-#ifdef __LIBRETRO__
+#ifdef HAVE_LIBRETRO
 std::vector<u8> System::SaveStateBuffer() const {
     std::ostringstream sstream{std::ios_base::binary};
     // Serialize
@@ -258,7 +258,7 @@ bool System::LoadStateBuffer(std::vector<u8> buffer) {
         return false;
     }
 
-    std::vector<u8> state(buffer.begin() + sizeof(CSTHeader), buffer.end()); 
+    std::vector<u8> state(buffer.begin() + sizeof(CSTHeader), buffer.end());
     auto decompressed = Common::Compression::DecompressDataZSTD(state);
 
     std::istringstream sstream{

@@ -57,11 +57,15 @@ public:
  */
 class LibRetroBackend : public Backend {
 public:
+    explicit LibRetroBackend() {}
     explicit LibRetroBackend(retro_log_printf_t callback) : callback(callback) {}
 
     ~LibRetroBackend() override = default;
 
     void Write(const Entry& entry) override {
+        if (callback == nullptr) {
+            return;
+        }
         retro_log_level log_level;
 
         switch (entry.log_level) {
@@ -96,7 +100,7 @@ public:
     void EnableForStacktrace() override {}
 
 private:
-    retro_log_printf_t callback;
+    retro_log_printf_t callback = nullptr;
 };
 #endif
 
@@ -487,8 +491,9 @@ private:
 } // namespace
 
 #ifdef HAVE_LIBRETRO
-void Initialize(retro_log_printf_t callback) {
+void LibRetroStart(retro_log_printf_t callback) {
     Impl::Initialize(callback);
+    Impl::Start();
 }
 #endif
 

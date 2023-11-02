@@ -17,7 +17,7 @@ class Filter;
 /// Initializes the logging system. This should be the first thing called in main.
 void Initialize(std::string_view log_file = "");
 #ifdef HAVE_LIBRETRO
-void Initialize(retro_log_printf_t callback);
+void LibRetroStart(retro_log_printf_t callback);
 #endif
 
 void Start();

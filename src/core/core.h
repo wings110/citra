@@ -338,7 +338,7 @@ public:
 
     void LoadState(u32 slot);
 
-#ifdef __LIBRETRO__
+#ifdef HAVE_LIBRETRO
     std::vector<u8> SaveStateBuffer() const;
 
     bool LoadStateBuffer(std::vector<u8> buffer);

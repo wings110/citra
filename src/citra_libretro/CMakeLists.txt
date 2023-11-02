@@ -24,3 +24,4 @@ target_link_libraries(citra_libretro PRIVATE -static-libstdc++)
 endif()
 
 set_target_properties(citra_libretro PROPERTIES PREFIX "")
+target_compile_definitions(citra_libretro PRIVATE HAVE_LIBRETRO)
