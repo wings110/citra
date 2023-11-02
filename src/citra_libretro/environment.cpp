@@ -4,9 +4,9 @@
 
 #include <cstring>
 
-#include "core/settings.h"
 #include "audio_core/audio_types.h"
 #include "audio_core/libretro_sink.h"
+#include "common/settings.h"
 #include "common/scm_rev.h"
 #include "environment.h"
 
@@ -19,7 +19,7 @@ using namespace LibRetro;
 namespace LibRetro {
 
 static retro_video_refresh_t video_cb;
-static retro_audio_sample_t audio_cb;
+//static retro_audio_sample_t audio_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;

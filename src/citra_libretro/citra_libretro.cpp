@@ -10,27 +10,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <common/file_util.h>
-#include <boost/algorithm/string/predicate.hpp>
+//#include <boost/algorithm/string/predicate.hpp>
 
 #include "glad/glad.h"
 #include "libretro.h"
 
 #include "audio_core/libretro_sink.h"
-#include "citra/lodepng_image_interface.h"
 #include "citra_libretro/citra_libretro.h"
 #include "citra_libretro/core_settings.h"
 #include "citra_libretro/environment.h"
-#include "citra_libretro/libretro_logger.h"
 #include "citra_libretro/input/input_factory.h"
+
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/memory.h"
 #include "core/hle/kernel/memory.h"
 #include "core/loader/loader.h"
-#include "core/settings.h"
 #include "core/frontend/applets/default_applets.h"
+#include "core/frontend/image_interface.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/video_core.h"
 
@@ -56,9 +56,9 @@ extern const struct rglgen_sym_map rglgen_symbol_map_citra;
 
 class CitraLibRetro {
 public:
-    CitraLibRetro() : log_filter(Log::Level::Info) {}
+    CitraLibRetro() : log_filter(Common::Log::Level::Info) {}
 
-    Log::Filter log_filter;
+    Common::Log::Filter log_filter;
     std::unique_ptr<EmuWindow_LibRetro> emu_window;
     bool gl_setup = false;
     struct retro_hw_render_callback hw_render {};
@@ -68,14 +68,13 @@ CitraLibRetro* emu_instance;
 
 void retro_init() {
     emu_instance = new CitraLibRetro();
-    Log::SetGlobalFilter(emu_instance->log_filter);
+    Common::Log::SetGlobalFilter(emu_instance->log_filter);
 
     // Check to see if the frontend is providing us with logging functionality
     auto callback = LibRetro::GetLoggingBackend();
     if (callback != nullptr) {
-        Log::AddBackend(std::make_unique<LibRetroLogger>(callback));
-    } else {
-        Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
+        Common::Log::Initialize(callback);
+        Common::Log::Start();
     }
 
     LOG_DEBUG(Frontend, "Initialising core...");
@@ -89,7 +88,7 @@ void retro_init() {
     Frontend::RegisterDefaultApplets();
 
     // Register generic image interface
-    Core::System::GetInstance().RegisterImageInterface(std::make_shared<LodePNGImageInterface>());
+    Core::System::GetInstance().RegisterImageInterface(std::make_shared<ImageInterface>());
 
     LibRetro::Input::Init();
 }

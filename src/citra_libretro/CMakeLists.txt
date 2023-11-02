@@ -12,14 +12,12 @@ add_library(citra_libretro SHARED
         environment.cpp
         environment.h
         core_settings.cpp
-        core_settings.h
-        libretro_logger.cpp
-        libretro_logger.h)
+        core_settings.h)
 
 create_target_directory_groups(citra_libretro)
 
 target_link_libraries(citra_libretro PRIVATE common core)
-target_link_libraries(citra_libretro PRIVATE glad libretro)
+target_link_libraries(citra_libretro PRIVATE boost dds-ktx glad libretro)
 target_link_libraries(citra_libretro PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 if(DEFINED LIBRETRO_STATIC)
 target_link_libraries(citra_libretro PRIVATE -static-libstdc++)

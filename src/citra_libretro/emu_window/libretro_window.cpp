@@ -9,8 +9,8 @@
 #include "citra_libretro/citra_libretro.h"
 #include "citra_libretro/environment.h"
 #include "citra_libretro/input/input_factory.h"
+#include "common/settings.h"
 #include "core/3ds.h"
-#include "core/settings.h"
 #include "video_core/renderer_opengl/gl_state.h"
 
 
@@ -127,13 +127,13 @@ void EmuWindow_LibRetro::UpdateLayout() {
     unsigned baseX;
     unsigned baseY;
 
-    float scaling = Settings::values.resolution_factor;
+    float scaling = Settings::values.resolution_factor.GetValue();
 
-    bool swapped = Settings::values.swap_screen;
+    bool swapped = Settings::values.swap_screen.GetValue();
 
     enableEmulatedPointer = true;
 
-    switch (Settings::values.layout_option) {
+    switch (Settings::values.layout_option.GetValue()) {
     case Settings::LayoutOption::SingleScreen:
         if (swapped) { // Bottom screen visible
             baseX = Core::kScreenBottomWidth;
@@ -192,8 +192,6 @@ void EmuWindow_LibRetro::UpdateLayout() {
     if (!LibRetro::SetGeometry(&info)) {
         LOG_CRITICAL(Frontend, "Failed to update 3DS layout in frontend!");
     }
-
-    NotifyClientAreaSizeChanged(std::pair<unsigned, unsigned>(baseX, baseY));
 
     width = baseX;
     height = baseY;

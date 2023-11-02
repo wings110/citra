@@ -41,7 +41,7 @@ struct SinkDetails {
 // sink_details is ordered in terms of desirability, with the best choice at the top.
 constexpr std::array sink_details = {
 #ifdef HAVE_LIBRETRO
-    SinkDetails{"libretro",
+    SinkDetails{SinkType::LibRetro, "libretro",
                 [](std::string_view device_id) -> std::unique_ptr<Sink> {
                     return std::make_unique<LibRetroSink>(std::string(device_id));
                 }, &ListLibretroSinkDevices},

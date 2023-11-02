@@ -189,3 +189,8 @@ if (BACKTRACE_LIBRARY AND ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" AND CMAKE_CXX_CO
     target_link_libraries(citra_common PRIVATE ${BACKTRACE_LIBRARY} dl)
     target_compile_definitions(citra_common PRIVATE CITRA_LINUX_GCC_BACKTRACE)
 endif()
+
+if(ENABLE_LIBRETRO)
+    target_link_libraries(citra_common PRIVATE libretro)
+    target_compile_definitions(citra_common PRIVATE HAVE_LIBRETRO)
+endif()

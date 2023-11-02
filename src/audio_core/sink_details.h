@@ -21,6 +21,7 @@ enum class SinkType : u32 {
     OpenAL = 3,
     SDL2 = 4,
 
+    LibRetro,
     NumSinkTypes,
 };
 

@@ -31,19 +31,19 @@ public:
     /// Releases the GL context from the caller thread
     void DoneCurrent() override;
 
-    void SetupFramebuffer() override;
+    void SetupFramebuffer();
 
     /// Prepares the window for rendering
     void UpdateLayout();
 
     /// Enables for deferring a renderer's initalisation.
-    bool ShouldDeferRendererInit() override;
+    bool ShouldDeferRendererInit();
 
     /// States whether a frame has been submitted. Resets after call.
     bool HasSubmittedFrame();
 
     /// Flags that the framebuffer should be cleared.
-    bool NeedsClearing() const override;
+    bool NeedsClearing() const;
 
     /// Creates state for a currently running OpenGL context.
     void CreateContext();

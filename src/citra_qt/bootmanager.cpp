@@ -615,7 +615,6 @@ void GRenderWindow::focusInEvent(QFocusEvent* event) {
 
 void GRenderWindow::resizeEvent(QResizeEvent* event) {
     QOpenGLWidget::resizeEvent(event);
-    NotifyClientAreaSizeChanged(std::make_pair(event->size().width(), event->size().height()));
     OnFramebufferSizeChanged();
 }
 
