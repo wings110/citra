@@ -1,3 +1,4 @@
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 add_library(citra_libretro SHARED
@@ -16,7 +17,7 @@ add_library(citra_libretro SHARED
 
 create_target_directory_groups(citra_libretro)
 
-target_link_libraries(citra_libretro PRIVATE common core)
+target_link_libraries(citra_libretro PRIVATE citra_common citra_core)
 target_link_libraries(citra_libretro PRIVATE boost dds-ktx glad libretro)
 target_link_libraries(citra_libretro PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 if(DEFINED LIBRETRO_STATIC)
