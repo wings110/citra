@@ -162,7 +162,7 @@ endif()
 
 if (ANDROID)
     add_subdirectory(android/app/src/main/cpp)
-else()
+endif()
 
 if (ENABLE_DEDICATED_ROOM)
     add_subdirectory(dedicated_room)
