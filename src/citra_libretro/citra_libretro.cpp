@@ -67,13 +67,8 @@ CitraLibRetro* emu_instance;
 
 void retro_init() {
     emu_instance = new CitraLibRetro();
+    Common::Log::LibRetroStart(LibRetro::GetLoggingBackend());
     Common::Log::SetGlobalFilter(emu_instance->log_filter);
-
-    // Check to see if the frontend is providing us with logging functionality
-    auto callback = LibRetro::GetLoggingBackend();
-    if (callback != nullptr) {
-        Common::Log::LibRetroStart(callback);
-    }
 
     LOG_DEBUG(Frontend, "Initialising core...");
 

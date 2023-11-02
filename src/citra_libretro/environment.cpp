@@ -119,7 +119,6 @@ std::string GetSystemDir() {
 retro_log_printf_t GetLoggingBackend() {
     retro_log_callback callback{};
     if (!environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &callback)) {
-        LOG_WARNING(Frontend, "No logging backend provided by LibRetro.");
         return nullptr;
     }
     return callback.log;
