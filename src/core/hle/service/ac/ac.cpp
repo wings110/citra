@@ -6,6 +6,7 @@
 #include "common/archives.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/hle/ipc.h"
 #include "core/hle/ipc_helpers.h"
@@ -15,11 +16,12 @@
 #include "core/hle/service/ac/ac.h"
 #include "core/hle/service/ac/ac_i.h"
 #include "core/hle/service/ac/ac_u.h"
+#include "core/hle/service/soc/soc_u.h"
 #include "core/memory.h"
 
 namespace Service::AC {
 void Module::Interface::CreateDefaultConfig(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x1, 0, 0);
+    IPC::RequestParser rp(ctx);
 
     std::vector<u8> buffer(sizeof(ACConfig));
     std::memcpy(buffer.data(), &ac->default_config, buffer.size());
@@ -32,10 +34,11 @@ void Module::Interface::CreateDefaultConfig(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::ConnectAsync(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x4, 0, 6);
+    IPC::RequestParser rp(ctx);
 
     rp.Skip(2, false); // ProcessId descriptor
     ac->connect_event = rp.PopObject<Kernel::Event>();
+    rp.Skip(2, false); // Buffer descriptor
 
     if (ac->connect_event) {
         ac->connect_event->SetName("AC:connect_event");
@@ -50,7 +53,7 @@ void Module::Interface::ConnectAsync(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::GetConnectResult(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x5, 0, 2);
+    IPC::RequestParser rp(ctx);
     rp.Skip(2, false); // ProcessId descriptor
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
@@ -58,7 +61,7 @@ void Module::Interface::GetConnectResult(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::CloseAsync(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x8, 0, 4);
+    IPC::RequestParser rp(ctx);
     rp.Skip(2, false); // ProcessId descriptor
 
     ac->close_event = rp.PopObject<Kernel::Event>();
@@ -79,7 +82,7 @@ void Module::Interface::CloseAsync(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::GetCloseResult(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x9, 0, 2);
+    IPC::RequestParser rp(ctx);
     rp.Skip(2, false); // ProcessId descriptor
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
@@ -89,20 +92,24 @@ void Module::Interface::GetCloseResult(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::GetWifiStatus(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0xD, 0, 0);
+    IPC::RequestParser rp(ctx);
+    bool can_reach_internet = false;
 
-    // TODO(purpasmart96): This function is only a stub,
-    // it returns a valid result without implementing full functionality.
+    std::shared_ptr<SOC::SOC_U> socu_module = SOC::GetService(Core::System::GetInstance());
+    if (socu_module) {
+        can_reach_internet = socu_module->GetDefaultInterfaceInfo().has_value();
+    }
 
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u32>(0); // Connection type set to none
-
-    LOG_WARNING(Service_AC, "(STUBBED) called");
+    rb.Push<u32>(static_cast<u32>(can_reach_internet ? (Settings::values.is_new_3ds
+                                                            ? WifiStatus::STATUS_CONNECTED_N3DS
+                                                            : WifiStatus::STATUS_CONNECTED_O3DS)
+                                                     : WifiStatus::STATUS_DISCONNECTED));
 }
 
 void Module::Interface::GetInfraPriority(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x27, 0, 2);
+    IPC::RequestParser rp(ctx);
     [[maybe_unused]] const std::vector<u8>& ac_config = rp.PopStaticBuffer();
 
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
@@ -113,7 +120,7 @@ void Module::Interface::GetInfraPriority(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::SetRequestEulaVersion(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x2D, 2, 2);
+    IPC::RequestParser rp(ctx);
 
     u32 major = rp.Pop<u8>();
     u32 minor = rp.Pop<u8>();
@@ -130,7 +137,7 @@ void Module::Interface::SetRequestEulaVersion(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::RegisterDisconnectEvent(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x30, 0, 4);
+    IPC::RequestParser rp(ctx);
     rp.Skip(2, false); // ProcessId descriptor
 
     ac->disconnect_event = rp.PopObject<Kernel::Event>();
@@ -144,8 +151,19 @@ void Module::Interface::RegisterDisconnectEvent(Kernel::HLERequestContext& ctx) 
     LOG_WARNING(Service_AC, "(STUBBED) called");
 }
 
+void Module::Interface::GetConnectingProxyEnable(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp(ctx);
+    constexpr bool proxy_enabled = false;
+
+    IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(proxy_enabled);
+
+    LOG_WARNING(Service_AC, "(STUBBED) called");
+}
+
 void Module::Interface::IsConnected(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x3E, 1, 2);
+    IPC::RequestParser rp(ctx);
     u32 unk = rp.Pop<u32>();
     u32 unk_descriptor = rp.Pop<u32>();
     u32 unk_param = rp.Pop<u32>();
@@ -159,7 +177,7 @@ void Module::Interface::IsConnected(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::SetClientVersion(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x40, 1, 2);
+    IPC::RequestParser rp(ctx);
 
     u32 version = rp.Pop<u32>();
     rp.Skip(2, false); // ProcessId descriptor

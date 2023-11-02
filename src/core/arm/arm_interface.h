@@ -35,8 +35,7 @@ public:
                 const auto r = GetCpuRegister(i);
                 ar << r;
             }
-            std::size_t fpu_reg_count = file_version == 0 ? 16 : 64;
-            for (std::size_t i = 0; i < fpu_reg_count; i++) {
+            for (std::size_t i = 0; i < 64; i++) {
                 const auto r = GetFpuRegister(i);
                 ar << r;
             }
@@ -55,8 +54,7 @@ public:
                 ar >> r;
                 SetCpuRegister(i, r);
             }
-            std::size_t fpu_reg_count = file_version == 0 ? 16 : 64;
-            for (std::size_t i = 0; i < fpu_reg_count; i++) {
+            for (std::size_t i = 0; i < 64; i++) {
                 ar >> r;
                 SetFpuRegister(i, r);
             }
@@ -121,6 +119,9 @@ public:
      * @param length The length (in bytes) of the range to invalidate.
      */
     virtual void InvalidateCacheRange(u32 start_address, std::size_t length) = 0;
+
+    /// Clears the exclusive monitor's state.
+    virtual void ClearExclusiveState() = 0;
 
     /// Notify CPU emulation that page tables have changed
     virtual void SetPageTable(const std::shared_ptr<Memory::PageTable>& page_table) = 0;
@@ -265,8 +266,7 @@ private:
         ar << pc;
         const auto cpsr = GetCPSR();
         ar << cpsr;
-        int vfp_reg_count = file_version == 0 ? 32 : 64;
-        for (int i = 0; i < vfp_reg_count; i++) {
+        for (int i = 0; i < 64; i++) {
             const auto r = GetVFPReg(i);
             ar << r;
         }
@@ -313,8 +313,7 @@ private:
         SetPC(r);
         ar >> r;
         SetCPSR(r);
-        int vfp_reg_count = file_version == 0 ? 32 : 64;
-        for (int i = 0; i < vfp_reg_count; i++) {
+        for (int i = 0; i < 64; i++) {
             ar >> r;
             SetVFPReg(i, r);
         }

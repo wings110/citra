@@ -22,9 +22,6 @@
 // applications use them as an underlying mechanism to implement thread-safe barriers, events, and
 // semaphores.
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Kernel namespace
-
 namespace Kernel {
 
 class Thread;
@@ -80,31 +77,15 @@ private:
     std::shared_ptr<Callback> timeout_callback;
 
     void WakeUp(ThreadWakeupReason reason, std::shared_ptr<Thread> thread,
-                std::shared_ptr<WaitObject> object);
-
-    class DummyCallback : public WakeupCallback {
-    public:
-        void WakeUp(ThreadWakeupReason reason, std::shared_ptr<Thread> thread,
-                    std::shared_ptr<WaitObject> object) override {}
-    };
+                std::shared_ptr<WaitObject> object) override;
 
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int file_version) {
         ar& boost::serialization::base_object<Object>(*this);
-        if (file_version == 1) {
-            // This rigmarole is needed because in past versions, AddressArbiter inherited
-            // WakeupCallback But it turns out this breaks shared_from_this, so we split it out.
-            // Using a dummy class to deserialize a base_object allows compatibility to be
-            // maintained.
-            DummyCallback x;
-            ar& boost::serialization::base_object<WakeupCallback>(x);
-        }
         ar& name;
         ar& waiting_threads;
-        if (file_version > 1) {
-            ar& timeout_callback;
-        }
+        ar& timeout_callback;
     }
 };
 

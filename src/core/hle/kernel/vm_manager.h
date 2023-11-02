@@ -13,6 +13,7 @@
 #include <boost/serialization/split_member.hpp>
 #include "common/common_types.h"
 #include "common/memory_ref.h"
+#include "core/hle/kernel/memory.h"
 #include "core/hle/result.h"
 #include "core/memory.h"
 #include "core/mmio.h"
@@ -131,7 +132,7 @@ public:
     std::map<VAddr, VirtualMemoryArea> vma_map;
     using VMAHandle = decltype(vma_map)::const_iterator;
 
-    explicit VMManager(Memory::MemorySystem& memory);
+    explicit VMManager(Memory::MemorySystem& memory, Kernel::Process& proc);
     ~VMManager();
 
     /// Clears the address space map, re-initializing with a single free area.
@@ -202,11 +203,10 @@ public:
     ResultCode ReprotectRange(VAddr target, u32 size, VMAPermission new_perms);
 
     /// Dumps the address space layout to the log, for debugging
-    void LogLayout(Log::Level log_level) const;
+    void LogLayout(Common::Log::Level log_level) const;
 
     /// Gets a list of backing memory blocks for the specified range
-    ResultVal<std::vector<std::pair<MemoryRef, u32>>> GetBackingBlocksForRange(VAddr address,
-                                                                               u32 size);
+    ResultVal<MemoryRegionInfo::IntervalSet> GetBackingBlocksForRange(VAddr address, u32 size);
 
     /// Each VMManager has its own page table, which is set as the main one when the owning process
     /// is scheduled.
@@ -254,6 +254,7 @@ private:
     void UpdatePageTableForVMA(const VirtualMemoryArea& vma);
 
     Memory::MemorySystem& memory;
+    Kernel::Process& process;
 
     // When locked, ChangeMemoryState calls will be ignored, other modification calls will hit an
     // assert. VMManager locks itself after deserialization.

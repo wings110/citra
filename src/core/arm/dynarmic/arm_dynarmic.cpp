@@ -3,12 +3,14 @@
 // Refer to the license.txt file included.
 
 #include <cstring>
-#include <dynarmic/A32/a32.h>
-#include <dynarmic/A32/context.h>
+#include <dynarmic/interface/A32/a32.h>
+#include <dynarmic/interface/optimization_flags.h>
 #include "common/assert.h"
 #include "common/microprofile.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/arm/dynarmic/arm_dynarmic_cp15.h"
+#include "core/arm/dynarmic/arm_exclusive_monitor.h"
+#include "core/arm/dynarmic/arm_tick_counts.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/gdbstub/gdbstub.h"
@@ -23,36 +25,36 @@ public:
     ~DynarmicThreadContext() override = default;
 
     void Reset() override {
-        ctx.Regs() = {};
-        ctx.SetCpsr(0);
-        ctx.ExtRegs() = {};
-        ctx.SetFpscr(0);
+        regs = {};
+        ext_regs = {};
+        cpsr = 0;
+        fpscr = 0;
         fpexc = 0;
     }
 
     u32 GetCpuRegister(std::size_t index) const override {
-        return ctx.Regs()[index];
+        return regs[index];
     }
     void SetCpuRegister(std::size_t index, u32 value) override {
-        ctx.Regs()[index] = value;
+        regs[index] = value;
     }
     u32 GetCpsr() const override {
-        return ctx.Cpsr();
+        return cpsr;
     }
     void SetCpsr(u32 value) override {
-        ctx.SetCpsr(value);
+        cpsr = value;
     }
     u32 GetFpuRegister(std::size_t index) const override {
-        return ctx.ExtRegs()[index];
+        return ext_regs[index];
     }
     void SetFpuRegister(std::size_t index, u32 value) override {
-        ctx.ExtRegs()[index] = value;
+        ext_regs[index] = value;
     }
     u32 GetFpscr() const override {
-        return ctx.Fpscr();
+        return fpscr;
     }
     void SetFpscr(u32 value) override {
-        ctx.SetFpscr(value);
+        fpscr = value;
     }
     u32 GetFpexc() const override {
         return fpexc;
@@ -64,7 +66,10 @@ public:
 private:
     friend class ARM_Dynarmic;
 
-    Dynarmic::A32::Context ctx;
+    std::array<u32, 16> regs;
+    std::array<u32, 64> ext_regs;
+    u32 cpsr;
+    u32 fpscr;
     u32 fpexc;
 };
 
@@ -100,10 +105,23 @@ public:
         memory.Write64(vaddr, value);
     }
 
+    bool MemoryWriteExclusive8(u32 vaddr, u8 value, u8 expected) override {
+        return memory.WriteExclusive8(vaddr, value, expected);
+    }
+    bool MemoryWriteExclusive16(u32 vaddr, u16 value, u16 expected) override {
+        return memory.WriteExclusive16(vaddr, value, expected);
+    }
+    bool MemoryWriteExclusive32(u32 vaddr, u32 value, u32 expected) override {
+        return memory.WriteExclusive32(vaddr, value, expected);
+    }
+    bool MemoryWriteExclusive64(u32 vaddr, u64 value, u64 expected) override {
+        return memory.WriteExclusive64(vaddr, value, expected);
+    }
+
     void InterpreterFallback(VAddr pc, std::size_t num_instructions) override {
         // Should never happen.
         UNREACHABLE_MSG("InterpeterFallback reached with pc = 0x{:08x}, code = 0x{:08x}, num = {}",
-                        pc, MemoryReadCode(pc), num_instructions);
+                        pc, MemoryReadCode(pc).value(), num_instructions);
     }
 
     void CallSVC(std::uint32_t swi) override {
@@ -114,6 +132,8 @@ public:
         switch (exception) {
         case Dynarmic::A32::Exception::UndefinedInstruction:
         case Dynarmic::A32::Exception::UnpredictableInstruction:
+        case Dynarmic::A32::Exception::DecodeError:
+        case Dynarmic::A32::Exception::NoExecuteFault:
             break;
         case Dynarmic::A32::Exception::Breakpoint:
             if (GDBStub::IsConnected()) {
@@ -130,10 +150,11 @@ public:
         case Dynarmic::A32::Exception::Yield:
         case Dynarmic::A32::Exception::PreloadData:
         case Dynarmic::A32::Exception::PreloadDataWithIntentToWrite:
+        case Dynarmic::A32::Exception::PreloadInstruction:
             return;
         }
         ASSERT_MSG(false, "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X})", exception,
-                   pc, MemoryReadCode(pc));
+                   pc, MemoryReadCode(pc).value());
     }
 
     void AddTicks(std::uint64_t ticks) override {
@@ -143,16 +164,21 @@ public:
         s64 ticks = parent.GetTimer().GetDowncount();
         return static_cast<u64>(ticks <= 0 ? 0 : ticks);
     }
+    std::uint64_t GetTicksForCode(bool is_thumb, VAddr, std::uint32_t instruction) override {
+        return Core::TicksForInstruction(is_thumb, instruction);
+    }
 
     ARM_Dynarmic& parent;
     Kernel::SVCContext svc_context;
     Memory::MemorySystem& memory;
 };
 
-ARM_Dynarmic::ARM_Dynarmic(Core::System* system, Memory::MemorySystem& memory, u32 id,
-                           std::shared_ptr<Core::Timing::Timer> timer)
-    : ARM_Interface(id, timer), system(*system), memory(memory),
-      cb(std::make_unique<DynarmicUserCallbacks>(*this)) {
+ARM_Dynarmic::ARM_Dynarmic(Core::System* system_, Memory::MemorySystem& memory_, u32 core_id_,
+                           std::shared_ptr<Core::Timing::Timer> timer_,
+                           Core::ExclusiveMonitor& exclusive_monitor_)
+    : ARM_Interface(core_id_, timer_), system(*system_), memory(memory_),
+      cb(std::make_unique<DynarmicUserCallbacks>(*this)),
+      exclusive_monitor{dynamic_cast<Core::DynarmicExclusiveMonitor&>(exclusive_monitor_)} {
     SetPageTable(memory.GetCurrentPageTable());
 }
 
@@ -208,6 +234,8 @@ u32 ARM_Dynarmic::GetVFPSystemReg(VFPSystemRegister reg) const {
     default:
         UNREACHABLE_MSG("Unknown VFP system register: {}", reg);
     }
+
+    return UINT_MAX;
 }
 
 void ARM_Dynarmic::SetVFPSystemReg(VFPSystemRegister reg, u32 value) {
@@ -240,6 +268,8 @@ u32 ARM_Dynarmic::GetCP15Register(CP15Register reg) const {
     default:
         UNREACHABLE_MSG("Unknown CP15 register: {}", reg);
     }
+
+    return 0;
 }
 
 void ARM_Dynarmic::SetCP15Register(CP15Register reg, u32 value) {
@@ -263,7 +293,10 @@ void ARM_Dynarmic::SaveContext(const std::unique_ptr<ThreadContext>& arg) {
     DynarmicThreadContext* ctx = dynamic_cast<DynarmicThreadContext*>(arg.get());
     ASSERT(ctx);
 
-    jit->SaveContext(ctx->ctx);
+    ctx->regs = jit->Regs();
+    ctx->ext_regs = jit->ExtRegs();
+    ctx->cpsr = jit->Cpsr();
+    ctx->fpscr = jit->Fpscr();
     ctx->fpexc = fpexc;
 }
 
@@ -271,7 +304,10 @@ void ARM_Dynarmic::LoadContext(const std::unique_ptr<ThreadContext>& arg) {
     const DynarmicThreadContext* ctx = dynamic_cast<DynarmicThreadContext*>(arg.get());
     ASSERT(ctx);
 
-    jit->LoadContext(ctx->ctx);
+    jit->Regs() = ctx->regs;
+    jit->ExtRegs() = ctx->ext_regs;
+    jit->SetCpsr(ctx->cpsr);
+    jit->SetFpscr(ctx->fpscr);
     fpexc = ctx->fpexc;
 }
 
@@ -291,27 +327,31 @@ void ARM_Dynarmic::InvalidateCacheRange(u32 start_address, std::size_t length) {
     jit->InvalidateCacheRange(start_address, length);
 }
 
+void ARM_Dynarmic::ClearExclusiveState() {
+    jit->ClearExclusiveState();
+}
+
 std::shared_ptr<Memory::PageTable> ARM_Dynarmic::GetPageTable() const {
     return current_page_table;
 }
 
 void ARM_Dynarmic::SetPageTable(const std::shared_ptr<Memory::PageTable>& page_table) {
     current_page_table = page_table;
-    Dynarmic::A32::Context ctx{};
+    auto ctx{NewContext()};
     if (jit) {
-        jit->SaveContext(ctx);
+        SaveContext(ctx);
     }
 
     auto iter = jits.find(current_page_table);
     if (iter != jits.end()) {
         jit = iter->second.get();
-        jit->LoadContext(ctx);
+        LoadContext(ctx);
         return;
     }
 
     auto new_jit = MakeJit();
     jit = new_jit.get();
-    jit->LoadContext(ctx);
+    LoadContext(ctx);
     jits.emplace(current_page_table, std::move(new_jit));
 }
 
@@ -325,9 +365,16 @@ void ARM_Dynarmic::ServeBreak() {
 std::unique_ptr<Dynarmic::A32::Jit> ARM_Dynarmic::MakeJit() {
     Dynarmic::A32::UserConfig config;
     config.callbacks = cb.get();
-    config.page_table = &current_page_table->GetPointerArray();
+    if (current_page_table) {
+        config.page_table = &current_page_table->GetPointerArray();
+    }
     config.coprocessors[15] = std::make_shared<DynarmicCP15>(cp15_state);
     config.define_unpredictable_behaviour = true;
+
+    // Multi-process state
+    config.processor_id = GetID();
+    config.global_monitor = &exclusive_monitor.monitor;
+
     return std::make_unique<Dynarmic::A32::Jit>(config);
 }
 

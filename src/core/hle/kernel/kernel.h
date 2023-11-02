@@ -8,6 +8,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -82,11 +83,59 @@ enum class MemoryRegion : u16 {
     BASE = 3,
 };
 
+union CoreVersion {
+    CoreVersion(u32 version) : raw(version) {}
+    CoreVersion(u32 major_ver, u32 minor_ver, u32 revision_ver) {
+        revision.Assign(revision_ver);
+        minor.Assign(minor_ver);
+        major.Assign(major_ver);
+    }
+
+    u32 raw = 0;
+    BitField<8, 8, u32> revision;
+    BitField<16, 8, u32> minor;
+    BitField<24, 8, u32> major;
+};
+
+/// Common memory memory modes.
+enum class MemoryMode : u8 {
+    Prod = 0, ///< 64MB app memory
+    Dev1 = 2, ///< 96MB app memory
+    Dev2 = 3, ///< 80MB app memory
+    Dev3 = 4, ///< 72MB app memory
+    Dev4 = 5, ///< 32MB app memory
+};
+
+/// New 3DS memory modes.
+enum class New3dsMemoryMode : u8 {
+    Legacy = 0,  ///< Use Old 3DS system mode.
+    NewProd = 1, ///< 124MB app memory
+    NewDev1 = 2, ///< 178MB app memory
+    NewDev2 = 3, ///< 124MB app memory
+};
+
+/// Structure containing N3DS hardware capability flags.
+struct New3dsHwCapabilities {
+    bool enable_l2_cache;         ///< Whether extra L2 cache should be enabled.
+    bool enable_804MHz_cpu;       ///< Whether the CPU should run at 804MHz.
+    New3dsMemoryMode memory_mode; ///< The New 3DS memory mode.
+
+private:
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+        ar& enable_l2_cache;
+        ar& enable_804MHz_cpu;
+        ar& memory_mode;
+    }
+    friend class boost::serialization::access;
+};
+
 class KernelSystem {
 public:
     explicit KernelSystem(Memory::MemorySystem& memory, Core::Timing& timing,
-                          std::function<void()> prepare_reschedule_callback, u32 system_mode,
-                          u32 num_cores, u8 n3ds_mode);
+                          std::function<void()> prepare_reschedule_callback, MemoryMode memory_mode,
+                          u32 num_cores, const New3dsHwCapabilities& n3ds_hw_caps,
+                          u64 override_init_time = 0);
     ~KernelSystem();
 
     using PortPair = std::pair<std::shared_ptr<ServerPort>, std::shared_ptr<ClientPort>>;
@@ -118,6 +167,12 @@ public:
     std::shared_ptr<CodeSet> CreateCodeSet(std::string name, u64 program_id);
 
     std::shared_ptr<Process> CreateProcess(std::shared_ptr<CodeSet> code_set);
+
+    /**
+     * Terminates a process, killing its threads and removing it from the process list.
+     * @param process Process to terminate.
+     */
+    void TerminateProcess(std::shared_ptr<Process> process);
 
     /**
      * Creates and returns a new thread. The new thread is immediately scheduled
@@ -187,7 +242,7 @@ public:
      * @param name Optional object name, used for debugging purposes.
      */
     ResultVal<std::shared_ptr<SharedMemory>> CreateSharedMemory(
-        Process* owner_process, u32 size, MemoryPermission permissions,
+        std::shared_ptr<Process> owner_process, u32 size, MemoryPermission permissions,
         MemoryPermission other_permissions, VAddr address = 0,
         MemoryRegion region = MemoryRegion::BASE, std::string name = "Unknown");
 
@@ -209,6 +264,10 @@ public:
 
     /// Retrieves a process from the current list of processes.
     std::shared_ptr<Process> GetProcessById(u32 process_id) const;
+
+    std::span<const std::shared_ptr<Process>> GetProcessList() const {
+        return process_list;
+    }
 
     std::shared_ptr<Process> GetCurrentProcess() const;
     void SetCurrentProcess(std::shared_ptr<Process> process);
@@ -254,6 +313,14 @@ public:
 
     void ResetThreadIDs();
 
+    MemoryMode GetMemoryMode() const {
+        return memory_mode;
+    }
+
+    const New3dsHwCapabilities& GetNew3dsHwCapabilities() const {
+        return n3ds_hw_caps;
+    }
+
     /// Map of named ports managed by the kernel, which can be retrieved using the ConnectToPort
     std::unordered_map<std::string, std::shared_ptr<ClientPort>> named_ports;
 
@@ -264,7 +331,7 @@ public:
     Core::Timing& timing;
 
 private:
-    void MemoryInit(u32 mem_type, u8 n3ds_mode);
+    void MemoryInit(MemoryMode memory_mode, New3dsMemoryMode n3ds_mode, u64 override_init_time);
 
     std::function<void()> prepare_reschedule_callback;
 
@@ -298,6 +365,9 @@ private:
     std::unique_ptr<IPCDebugger::Recorder> ipc_recorder;
 
     u32 next_thread_id;
+
+    MemoryMode memory_mode;
+    New3dsHwCapabilities n3ds_hw_caps;
 
     friend class boost::serialization::access;
     template <class Archive>

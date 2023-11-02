@@ -31,17 +31,16 @@ constexpr std::array<u8, 10> KeyTypes{{
     HW::AES::APTWrap,
     HW::AES::BOSSDataKey,
     0x32, // unknown
-    HW::AES::DLPDataKey,
+    HW::AES::DLPNFCDataKey,
     HW::AES::CECDDataKey,
     0, // invalid
     HW::AES::FRDKey,
     // Note: According to 3dbrew the KeyY is overridden by Process9 when using this key type.
-    // TODO: implement this behaviour?
-    HW::AES::NFCKey,
+    HW::AES::DLPNFCDataKey,
 }};
 
 void PS_PS::EncryptDecryptAes(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp(ctx, 0x4, 8, 4);
+    IPC::RequestParser rp(ctx);
     auto src_size = rp.Pop<u32>();
     [[maybe_unused]] const auto dest_size = rp.Pop<u32>();
 
@@ -59,6 +58,12 @@ void PS_PS::EncryptDecryptAes(Kernel::HLERequestContext& ctx) {
     // TODO(zhaowenlan1779): Tests on a real 3DS shows that no error is returned in this case
     // and encrypted data is actually returned, but the key used is unknown.
     ASSERT_MSG(key_type != 7 && key_type < 10, "Key type is invalid");
+
+    if (key_type == 0x5) {
+        HW::AES::SelectDlpNfcKeyYIndex(HW::AES::DlpNfcKeyY::Dlp);
+    } else if (key_type == 0x9) {
+        HW::AES::SelectDlpNfcKeyYIndex(HW::AES::DlpNfcKeyY::Nfc);
+    }
 
     if (!HW::AES::IsNormalKeyAvailable(KeyTypes[key_type])) {
         LOG_ERROR(Service_PS,
@@ -144,22 +149,22 @@ void PS_PS::EncryptDecryptAes(Kernel::HLERequestContext& ctx) {
 PS_PS::PS_PS() : ServiceFramework("ps:ps", DefaultMaxSessions) {
     static const FunctionInfo functions[] = {
         // clang-format off
-        {0x00010244, nullptr, "SignRsaSha256"},
-        {0x00020244, nullptr, "VerifyRsaSha256"},
-        {0x00040204, &PS_PS::EncryptDecryptAes, "EncryptDecryptAes"},
-        {0x00050284, nullptr, "EncryptSignDecryptVerifyAesCcm"},
-        {0x00060040, nullptr, "GetRomId"},
-        {0x00070040, nullptr, "GetRomId2"},
-        {0x00080040, nullptr, "GetRomMakerCode"},
-        {0x00090000, nullptr, "GetCTRCardAutoStartupBit"},
-        {0x000A0000, nullptr, "GetLocalFriendCodeSeed"},
-        {0x000B0000, nullptr, "GetDeviceId"},
-        {0x000C0000, nullptr, "SeedRNG"},
-        {0x000D0042, nullptr, "GenerateRandomBytes"},
-        {0x000E0082, nullptr, "InterfaceForPXI_0x04010084"},
-        {0x000F0082, nullptr, "InterfaceForPXI_0x04020082"},
-        {0x00100042, nullptr, "InterfaceForPXI_0x04030044"},
-        {0x00110042, nullptr, "InterfaceForPXI_0x04040044"},
+        {0x0001, nullptr, "SignRsaSha256"},
+        {0x0002, nullptr, "VerifyRsaSha256"},
+        {0x0004, &PS_PS::EncryptDecryptAes, "EncryptDecryptAes"},
+        {0x0005, nullptr, "EncryptSignDecryptVerifyAesCcm"},
+        {0x0006, nullptr, "GetRomId"},
+        {0x0007, nullptr, "GetRomId2"},
+        {0x0008, nullptr, "GetRomMakerCode"},
+        {0x0009, nullptr, "GetCTRCardAutoStartupBit"},
+        {0x000A, nullptr, "GetLocalFriendCodeSeed"},
+        {0x000B, nullptr, "GetDeviceId"},
+        {0x000C, nullptr, "SeedRNG"},
+        {0x000D, nullptr, "GenerateRandomBytes"},
+        {0x000E, nullptr, "InterfaceForPXI_0x04010084"},
+        {0x000F, nullptr, "InterfaceForPXI_0x04020082"},
+        {0x0010, nullptr, "InterfaceForPXI_0x04030044"},
+        {0x0011, nullptr, "InterfaceForPXI_0x04040044"},
         // clang-format on
     };
 

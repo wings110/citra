@@ -5,14 +5,15 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <boost/container/flat_set.hpp>
 #include <boost/serialization/export.hpp>
-#include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/weak_ptr.hpp>
 #include "common/common_types.h"
 #include "common/thread_queue_list.h"
 #include "core/arm/arm_interface.h"
@@ -111,12 +112,17 @@ public:
     void ExitCurrentThread();
 
     /**
+     * Terminates all threads belonging to a specific process.
+     */
+    void TerminateProcessThreads(std::shared_ptr<Process> process);
+
+    /**
      * Get a const reference to the thread list for debug use
      */
-    const std::vector<std::shared_ptr<Thread>>& GetThreadList();
+    std::span<const std::shared_ptr<Thread>> GetThreadList();
 
-    void SetCPU(ARM_Interface& cpu) {
-        this->cpu = &cpu;
+    void SetCPU(ARM_Interface& cpu_) {
+        cpu = &cpu_;
     }
 
     std::unique_ptr<ARM_Interface::ThreadContext> NewContext() {
@@ -148,6 +154,7 @@ private:
 
     std::shared_ptr<Thread> current_thread;
     Common::ThreadQueueList<Thread*, ThreadPrioLowest + 1> ready_queue;
+    std::deque<Thread*> unscheduled_ready_queue;
     std::unordered_map<u64, Thread*> wakeup_callback_table;
 
     /// Event type for the thread wake up event
@@ -231,8 +238,10 @@ public:
     /**
      * Schedules an event to wake up the specified thread after the specified delay
      * @param nanoseconds The time this thread will be allowed to sleep for
+     * @param thread_safe_mode Set to true if called from a different thread than the emulator
+     * thread, such as coroutines.
      */
-    void WakeAfterDelay(s64 nanoseconds);
+    void WakeAfterDelay(s64 nanoseconds, bool thread_safe_mode = false);
 
     /**
      * Sets the result after the thread awakens (from either WaitSynchronization SVC)
@@ -289,6 +298,7 @@ public:
 
     u32 thread_id;
 
+    bool can_schedule;
     ThreadStatus status;
     VAddr entry_point;
     VAddr stack_top;

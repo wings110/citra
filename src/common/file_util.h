@@ -6,8 +6,8 @@
 
 #include <array>
 #include <cstdio>
-#include <fstream>
 #include <functional>
+#include <ios>
 #include <limits>
 #include <optional>
 #include <string>
@@ -194,8 +194,12 @@ void SetCurrentRomPath(const std::string& path);
 // directory. To be used in "multi-user" mode (that is, installed).
 [[nodiscard]] const std::string& GetUserPath(UserPath path);
 
+// Returns a pointer to a string with the default Citra data dir in the user's home
+// directory.
+[[nodiscard]] const std::string& GetDefaultUserPath(UserPath path);
+
 // Update the Global Path with the new value
-const void UpdateUserPath(UserPath path, const std::string& filename);
+void UpdateUserPath(UserPath path, const std::string& filename);
 
 // Returns the path to where the sys file are
 [[nodiscard]] std::string GetSysDirectory();
@@ -340,6 +344,15 @@ public:
     [[nodiscard]] bool IsGood() const {
         return m_good;
     }
+    [[nodiscard]] int GetFd() const {
+#ifdef ANDROID
+        return m_fd;
+#else
+        if (m_file == nullptr)
+            return -1;
+        return fileno(m_file);
+#endif
+    }
     [[nodiscard]] explicit operator bool() const {
         return IsGood();
     }
@@ -367,7 +380,8 @@ private:
 
     bool Open();
 
-    CORE_FILE* m_file = nullptr;
+    std::FILE* m_file = nullptr;
+    int m_fd = -1;
     bool m_good = true;
 
     std::string filename;
@@ -392,6 +406,8 @@ private:
     friend class boost::serialization::access;
 };
 
+template <std::ios_base::openmode o, typename T>
+void OpenFStream(T& fstream, const std::string& filename);
 } // namespace FileUtil
 
 // To deal with Windows being dumb at unicode:

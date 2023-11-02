@@ -5,6 +5,10 @@ include_directories(.)
 set_property(DIRECTORY APPEND PROPERTY
     COMPILE_DEFINITIONS $<$<CONFIG:Debug>:_DEBUG> $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
+if (ENABLE_LTO)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 # Set compilation flags
 if (MSVC)
     set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE STRING "" FORCE)
@@ -24,36 +28,70 @@ if (MSVC)
     # /W3                 - Level 3 warnings
     # /MP                 - Multi-threaded compilation
     # /Zi                 - Output debugging information
+    # /Zm                 - Specifies the precompiled header memory allocation limit
     # /Zo                 - Enhanced debug info for optimized builds
     # /permissive-        - Enables stricter C++ standards conformance checks
     # /EHsc               - C++-only exception handling semantics
+    # /utf-8              - Set source and execution character sets to UTF-8
     # /volatile:iso       - Use strict standards-compliant volatile semantics.
     # /Zc:externConstexpr - Allow extern constexpr variables to have external linkage, like the standard mandates
     # /Zc:inline          - Let codegen omit inline functions in object files
     # /Zc:throwingNew     - Let codegen assume `operator new` (without std::nothrow) will never return null
-    # /external:*         - Suppress warnings from external headers
+    # /GT                 - Supports fiber safety for data allocated using static thread-local storage
     add_compile_options(
-        /W3
         /MP
+        /Zm200
+        /Zo
         /permissive-
         /EHsc
+        /utf-8
         /volatile:iso
         /Zc:externConstexpr
         /Zc:inline
         /Zc:throwingNew
-        /experimental:external
-        /external:I "${CMAKE_SOURCE_DIR}/externals"
-        /external:anglebrackets
-        /external:W0
+        /GT
+
+        # External headers diagnostics
+        /experimental:external  # Enables the external headers options. This option isn't required in Visual Studio 2019 version 16.10 and later
+        /external:anglebrackets # Treats all headers included by #include <header>, where the header file is enclosed in angle brackets (< >), as external headers
+        /external:W0            # Sets the default warning level to 0 for external headers, effectively turning off warnings for external headers
+
+        # Warnings
+        /W3
+
+        /we4062 # Enumerator 'identifier' in a switch of enum 'enumeration' is not handled
+        /we4189 # 'identifier': local variable is initialized but not referenced
+        /we4265 # 'class': class has virtual functions, but destructor is not virtual
+        /we4388 # 'expression': signed/unsigned mismatch
+        /we4389 # 'operator': signed/unsigned mismatch
+        /we4456 # Declaration of 'identifier' hides previous local declaration
+        /we4457 # Declaration of 'identifier' hides function parameter
+        # /we4458 TODO: Enable me # Declaration of 'identifier' hides class member
+        /we4459 # Declaration of 'identifier' hides global declaration
+        /we4505 # 'function': unreferenced local function has been removed
+        /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
+        /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
+        /we4555 # Expression has no effect; expected expression with side-effect
+        /we4826 # Conversion from 'type1' to 'type2' is sign-extended. This may cause unexpected runtime behavior.
+        /we5038 # data member 'member1' will be initialized after data member 'member2'
+        /we5233 # explicit lambda capture 'identifier' is not used
+        /we5245 # 'function': unreferenced function with internal linkage has been removed
+
+        /wd4100 # 'identifier': unreferenced formal parameter
+        /wd4324 # 'struct_name': structure was padded due to __declspec(align())
     )
+
+    if (CITRA_WARNINGS_AS_ERRORS)
+        add_compile_options(/WX)
+    endif()
 
     # Since MSVC's debugging information is not very deterministic, so we have to disable it
     # when using ccache or other caching tools
-    if (NOT USE_CCACHE)
-        add_compile_options(
-            /Zi
-            /Zo
-        )
+    if (CITRA_USE_CCACHE OR CITRA_USE_PRECOMPILED_HEADERS)
+        # Precompiled headers are deleted if not using /Z7. See https://github.com/nanoant/CMakePCHCompiler/issues/21
+        add_compile_options(/Z7)
+    else()
+        add_compile_options(/Zi)
     endif()
 
     # /GS- - No stack buffer overflow checks
@@ -67,17 +105,12 @@ else()
         -Wno-attributes
     )
 
-    if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-        add_compile_options("-stdlib=libc++")
+    if (CITRA_WARNINGS_AS_ERRORS)
+        add_compile_options(-Werror)
     endif()
 
-    # Set file offset size to 64 bits.
-    #
-    # On modern Unixes, this is typically already the case. The lone exception is
-    # glibc, which may default to 32 bits. glibc allows this to be configured
-    # by setting _FILE_OFFSET_BITS.
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR MINGW)
-        add_definitions(-D_FILE_OFFSET_BITS=64)
+    if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+        add_compile_options("-stdlib=libc++")
     endif()
 
     if (MINGW)
@@ -85,14 +118,16 @@ else()
         if (COMPILE_WITH_DWARF)
             add_compile_options("-gdwarf")
         endif()
-
-        if (MINGW_STATIC_BUILD)
-            add_definitions(-DQT_STATICPLUGIN)
-            add_compile_options("-static")
-        endif()
     endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR MINGW)
+        # Set file offset size to 64 bits.
+        #
+        # On modern Unixes, this is typically already the case. The lone exception is
+        # glibc, which may default to 32 bits. glibc allows this to be configured
+        # by setting _FILE_OFFSET_BITS.
+        add_definitions(-D_FILE_OFFSET_BITS=64)
+
         # GNU ar: Create thin archive files.
         # Requires binutils-2.19 or later.
         set(CMAKE_C_ARCHIVE_CREATE   "<CMAKE_AR> qcTP <TARGET> <LINK_FLAGS> <OBJECTS>")
@@ -108,22 +143,34 @@ add_subdirectory(video_core)
 add_subdirectory(audio_core)
 add_subdirectory(network)
 add_subdirectory(input_common)
-add_subdirectory(tests)
 
-if (ENABLE_SDL2)
+if (ENABLE_TESTS)
+    add_subdirectory(tests)
+endif()
+
+if (ENABLE_SDL2 AND ENABLE_SDL2_FRONTEND)
     add_subdirectory(citra)
 endif()
 
 if (ENABLE_QT)
     add_subdirectory(citra_qt)
 endif()
+
 if (ENABLE_LIBRETRO)
     add_subdirectory(citra_libretro)
 endif()
+
 if (ANDROID)
     add_subdirectory(android/app/src/main/cpp)
 else()
+
+if (ENABLE_DEDICATED_ROOM)
     add_subdirectory(dedicated_room)
+endif()
+
+if (ANDROID)
+    add_subdirectory(android/app/src/main/jni)
+    target_include_directories(citra-android PRIVATE android/app/src/main)
 endif()
 
 if (ENABLE_WEB_SERVICE)
