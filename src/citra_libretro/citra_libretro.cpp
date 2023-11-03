@@ -31,6 +31,7 @@
 #include "core/frontend/applets/default_applets.h"
 #include "core/frontend/image_interface.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
+#include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "video_core/video_core.h"
 
 #ifdef HAVE_LIBRETRO_VFS
@@ -59,7 +60,7 @@ public:
 
     Common::Log::Filter log_filter;
     std::unique_ptr<EmuWindow_LibRetro> emu_window;
-    bool gl_setup = false;
+    bool hw_setup = false;
     struct retro_hw_render_callback hw_render {};
 };
 
@@ -125,6 +126,7 @@ void LibRetro::OnConfigureEnvironment() {
     }
 
     static const retro_variable values[] = {
+        {"citra_graphics_api", "Graphics API; Auto|Vulkan|OpenGL"},
         {"citra_use_cpu_jit", "Enable CPU JIT; enabled|disabled"},
         {"citra_cpu_scale", cpuScale.c_str()},
         {"citra_use_shader_jit", "Enable shader JIT; enabled|disabled"},
@@ -240,7 +242,14 @@ void UpdateSettings() {
         Settings::values.cpu_clock_percentage = scale;
     }
 
-    Settings::values.graphics_api = Settings::GraphicsAPI::OpenGL;
+    auto graphicsApi = std::string("OpenGL");//LibRetro::FetchVariable("citra_graphics_api", "Auto");
+    if (graphicsApi == "Auto") {
+        Settings::values.graphics_api = LibRetro::GetPrefferedHWRenderer();
+    } else if (graphicsApi == "Vulkan") {
+        Settings::values.graphics_api = Settings::GraphicsAPI::Vulkan;
+    } else {
+        Settings::values.graphics_api = Settings::GraphicsAPI::OpenGL;
+    }
 
     Settings::values.use_hw_shader =
             LibRetro::FetchVariable("citra_use_hw_shaders", "enabled") == "enabled";
@@ -561,6 +570,9 @@ void context_reset() {
     }
 
     switch (Settings::values.graphics_api.GetValue()) {
+    case Settings::GraphicsAPI::Vulkan:
+        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
+        break;
     case Settings::GraphicsAPI::OpenGL:
     default:
         VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
@@ -594,7 +606,7 @@ bool retro_load_game(const struct retro_game_info* info) {
 
     LibRetro::settings.file_path = info->path;
 
-    if(!emu_instance->gl_setup) {
+    if(!emu_instance->hw_setup) {
 #ifndef HAVE_LIBNX
         LibRetro::SetHWSharedContext();
 #endif
@@ -604,34 +616,44 @@ bool retro_load_game(const struct retro_game_info* info) {
             LibRetro::DisplayMessage("XRGB8888 is not supported.");
             return false;
         }
-
+        switch (Settings::values.graphics_api.GetValue()) {
+        case Settings::GraphicsAPI::Vulkan:
+            LOG_INFO(Frontend, "Using Vulkan hw renderer");
+            emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_VULKAN;
+            emu_instance->hw_render.version_major = 1;
+            emu_instance->hw_render.version_minor = 0;
+            break;
+        case Settings::GraphicsAPI::OpenGL:
+        default:
+            LOG_INFO(Frontend, "Using OpenGL hw renderer");
 #if defined(HAVE_LIBNX)
-        emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
-        emu_instance->hw_render.version_major = 0;
-        emu_instance->hw_render.version_minor = 0;
+            emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
+            emu_instance->hw_render.version_major = 0;
+            emu_instance->hw_render.version_minor = 0;
 
-        rglgen_resolve_symbols_custom(&eglGetProcAddress, &rglgen_symbol_map_citra);
+            rglgen_resolve_symbols_custom(&eglGetProcAddress, &rglgen_symbol_map_citra);
 #elif defined(USING_GLES)
-        emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES3;
-        emu_instance->hw_render.version_major = 3;
-        emu_instance->hw_render.version_minor = 2;
+            emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGLES3;
+            emu_instance->hw_render.version_major = 3;
+            emu_instance->hw_render.version_minor = 2;
 #else
-        emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGL_CORE;
-        emu_instance->hw_render.version_major = 3;
-        emu_instance->hw_render.version_minor = 3;
+            emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGL_CORE;
+            emu_instance->hw_render.version_major = 3;
+            emu_instance->hw_render.version_minor = 3;
 #endif
+        }
         emu_instance->hw_render.context_reset = context_reset;
         emu_instance->hw_render.context_destroy = context_destroy;
         emu_instance->hw_render.cache_context = false;
         emu_instance->hw_render.bottom_left_origin = true;
         if (!LibRetro::SetHWRenderer(&emu_instance->hw_render)) {
-            LOG_CRITICAL(Frontend, "OpenGL 3.3 is not supported.");
-            LibRetro::DisplayMessage("OpenGL 3.3 is not supported.");
+            LOG_CRITICAL(Frontend, "Failed to set HW renderer");
+            LibRetro::DisplayMessage("Failed to set HW renderer");
             return false;
         }
 
         emu_instance->emu_window = std::make_unique<EmuWindow_LibRetro>();
-        emu_instance->gl_setup = true;
+        emu_instance->hw_setup = true;
     }
 
     UpdateSettings();

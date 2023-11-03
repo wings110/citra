@@ -13,6 +13,8 @@ namespace Frontend {
 /// We need a global touch state that is shared across the different window instances
 static std::weak_ptr<EmuWindow::TouchState> global_touch_state;
 
+GraphicsContext::~GraphicsContext() = default;
+
 class EmuWindow::TouchState : public Input::Factory<Input::TouchDevice>,
                               public std::enable_shared_from_this<TouchState> {
 public:

@@ -6,7 +6,6 @@
 
 #include "audio_core/audio_types.h"
 #include "audio_core/libretro_sink.h"
-#include "common/settings.h"
 #include "common/scm_rev.h"
 #include "environment.h"
 
@@ -34,6 +33,15 @@ bool SetHWSharedContext() {
 
 void PollInput() {
     return input_poll_cb();
+}
+
+Settings::GraphicsAPI GetPrefferedHWRenderer() {
+    retro_hw_context_type context_type = RETRO_HW_CONTEXT_OPENGL;
+    environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &context_type);
+    if (context_type == RETRO_HW_CONTEXT_VULKAN) {
+        return Settings::GraphicsAPI::Vulkan;
+    }
+    return Settings::GraphicsAPI::OpenGL;
 }
 
 bool SetVariables(const retro_variable vars[]) {

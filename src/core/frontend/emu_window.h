@@ -75,6 +75,7 @@ public:
  */
 class GraphicsContext {
 public:
+    virtual ~GraphicsContext();
 
     /// Inform the driver to swap the front/back buffers and present the current image
     virtual void SwapBuffers(){};
