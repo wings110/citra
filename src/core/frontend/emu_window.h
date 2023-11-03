@@ -255,7 +255,7 @@ public:
     void SetupFramebuffer() {}
 
     /// Flags that the Emulation Window is not ready to support a hardware context yet.
-    bool ShouldDeferRendererInit() {
+    virtual bool ShouldDeferRendererInit() {
         return false;
     }
 

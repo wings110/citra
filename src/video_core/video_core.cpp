@@ -32,6 +32,10 @@ void Init(Frontend::EmuWindow& emu_window, Frontend::EmuWindow* secondary_window
     g_memory = &system.Memory();
     Pica::Init();
 
+    if (emu_window.ShouldDeferRendererInit()) {
+        // We will come back to it later
+        return;
+    }
     const Settings::GraphicsAPI graphics_api = Settings::values.graphics_api.GetValue();
     switch (graphics_api) {
     case Settings::GraphicsAPI::Software:

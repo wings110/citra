@@ -540,6 +540,24 @@ void context_reset() {
                   "Likely memory leak: context_destroy() was not called before context_reset()!");
     }
 
+    // Check to see if the frontend provides us with OpenGL symbols
+    if (emu_instance->hw_render.get_proc_address != nullptr) {
+        bool loaded = Settings::values.use_gles
+            ? gladLoadGLES2Loader((GLADloadproc)load_opengl_func)
+            : gladLoadGLLoader((GLADloadproc)load_opengl_func);
+
+        if (!loaded) {
+            LOG_CRITICAL(Frontend, "Glad failed to load (frontend-provided symbols)!");
+            return;
+        }
+    } else {
+        // Else, try to load them on our own
+        if (!gladLoadGL()) {
+            LOG_CRITICAL(Frontend, "Glad failed to load (internal symbols)!");
+            return;
+        }
+    }
+
     VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
 
     if(Settings::values.use_disk_shader_cache) {
@@ -611,25 +629,6 @@ bool retro_load_game(const struct retro_game_info* info) {
     }
 
     UpdateSettings();
-
-    LOG_INFO(Log, "glGetString = {}", load_opengl_func("glGetString"));
-    // Check to see if the frontend provides us with OpenGL symbols
-    if (false && emu_instance->hw_render.get_proc_address != nullptr) {
-        bool loaded = Settings::values.use_gles
-            ? gladLoadGLES2Loader((GLADloadproc)load_opengl_func)
-            : gladLoadGLLoader((GLADloadproc)load_opengl_func);
-
-        if (!loaded) {
-            LOG_CRITICAL(Frontend, "Glad failed to load (frontend-provided symbols)!");
-            return false;
-        }
-    } else {
-        // Else, try to load them on our own
-        if (!gladLoadGL()) {
-            LOG_CRITICAL(Frontend, "Glad failed to load (internal symbols)!");
-            return false;
-        }
-    }
 
     const Core::System::ResultStatus load_result{Core::System::GetInstance().Load(
         *emu_instance->emu_window, LibRetro::settings.file_path)};
