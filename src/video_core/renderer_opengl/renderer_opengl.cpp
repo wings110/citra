@@ -88,7 +88,10 @@ void RendererOpenGL::SwapBuffers() {
 
     PrepareRendertarget();
     RenderScreenshot();
-
+#ifdef HAVE_LIBRETRO
+    DrawScreens(render_window.GetFramebufferLayout(), false);
+    render_window.SwapBuffers();
+#else
     const auto& main_layout = render_window.GetFramebufferLayout();
     RenderToMailbox(main_layout, render_window.mailbox, false);
 
@@ -107,7 +110,7 @@ void RendererOpenGL::SwapBuffers() {
             LOG_DEBUG(Render_OpenGL, "Frame dumper exception caught: {}", exception.what());
         }
     }
-
+#endif
     EndFrame();
     prev_state.Apply();
     rasterizer.TickFrame();

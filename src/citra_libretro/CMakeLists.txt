@@ -19,6 +19,7 @@ create_target_directory_groups(citra_libretro)
 
 target_link_libraries(citra_common PRIVATE libretro)
 target_compile_definitions(citra_common PRIVATE HAVE_LIBRETRO)
+target_compile_definitions(video_core PRIVATE HAVE_LIBRETRO)
 
 target_link_libraries(citra_libretro PRIVATE citra_common citra_core)
 target_link_libraries(citra_libretro PRIVATE boost dds-ktx glad libretro)
