@@ -96,6 +96,8 @@ void retro_deinit() {
     LibRetro::Input::Shutdown();
 
     delete emu_instance;
+
+    Common::Log::LibRetroStop();
 }
 
 unsigned retro_api_version() {

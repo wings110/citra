@@ -69,26 +69,26 @@ public:
         retro_log_level log_level;
 
         switch (entry.log_level) {
-            case Common::Log::Level::Trace:
-                log_level = retro_log_level::RETRO_LOG_DEBUG;
-                break;
-            case Common::Log::Level::Debug:
-                log_level = retro_log_level::RETRO_LOG_DEBUG;
-                break;
-            case Common::Log::Level::Info:
-                log_level = retro_log_level::RETRO_LOG_INFO;
-                break;
-            case Common::Log::Level::Warning:
-                log_level = retro_log_level::RETRO_LOG_WARN;
-                break;
-            case Common::Log::Level::Error:
-                log_level = retro_log_level::RETRO_LOG_ERROR;
-                break;
-            case Common::Log::Level::Critical:
-                log_level = retro_log_level::RETRO_LOG_ERROR;
-                break;
-            default:
-                UNREACHABLE();
+        case Common::Log::Level::Trace:
+            log_level = retro_log_level::RETRO_LOG_DEBUG;
+            break;
+        case Common::Log::Level::Debug:
+            log_level = retro_log_level::RETRO_LOG_DEBUG;
+            break;
+        case Common::Log::Level::Info:
+            log_level = retro_log_level::RETRO_LOG_INFO;
+            break;
+        case Common::Log::Level::Warning:
+            log_level = retro_log_level::RETRO_LOG_WARN;
+            break;
+        case Common::Log::Level::Error:
+            log_level = retro_log_level::RETRO_LOG_ERROR;
+            break;
+        case Common::Log::Level::Critical:
+            log_level = retro_log_level::RETRO_LOG_ERROR;
+            break;
+        default:
+            UNREACHABLE();
         }
 
         auto str = FormatLogMessage(entry).append(1, '\n');
@@ -98,6 +98,10 @@ public:
     void Flush() override {}
 
     void EnableForStacktrace() override {}
+
+    void Stop() {
+        callback = nullptr;
+    }
 
 private:
     retro_log_printf_t callback = nullptr;
@@ -265,6 +269,9 @@ public:
         instance = std::unique_ptr<Impl, decltype(&Deleter)>(
             new Impl(callback, filter), Deleter);
         initialization_in_progress_suppress_logging = false;
+    }
+    void Stop() {
+        instance->libretro_backend.Stop();
     }
 #endif
     static void Initialize(std::string_view log_file) {
@@ -494,6 +501,9 @@ private:
 void LibRetroStart(retro_log_printf_t callback) {
     Impl::Initialize(callback);
     Impl::Start();
+}
+void LibRetroStop() {
+    Impl::Instance().Stop();
 }
 #endif
 
