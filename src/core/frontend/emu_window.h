@@ -158,7 +158,7 @@ public:
         float render_surface_scale = 1.0f;
     };
 
-        /// Polls window events
+    /// Polls window events
     virtual void PollEvents() = 0;
 
     /**

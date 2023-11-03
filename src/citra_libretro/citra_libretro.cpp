@@ -240,6 +240,8 @@ void UpdateSettings() {
         Settings::values.cpu_clock_percentage = scale;
     }
 
+    Settings::values.graphics_api = Settings::GraphicsAPI::OpenGL;
+
     Settings::values.use_hw_shader =
             LibRetro::FetchVariable("citra_use_hw_shaders", "enabled") == "enabled";
     Settings::values.use_shader_jit =
@@ -558,7 +560,11 @@ void context_reset() {
         }
     }
 
-    VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
+    switch (Settings::values.graphics_api.GetValue()) {
+    case Settings::GraphicsAPI::OpenGL:
+    default:
+        VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
+    }
 
     if(Settings::values.use_disk_shader_cache) {
         Core::System::GetInstance().Renderer().Rasterizer()->LoadDiskResources(false, nullptr);

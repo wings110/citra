@@ -51,7 +51,9 @@ void ResetGLState() {
     glActiveTexture(GL_TEXTURE0);
 }
 
-EmuWindow_LibRetro::EmuWindow_LibRetro() {}
+EmuWindow_LibRetro::EmuWindow_LibRetro() {
+    strict_context_required = true;
+}
 
 EmuWindow_LibRetro::~EmuWindow_LibRetro() {}
 
