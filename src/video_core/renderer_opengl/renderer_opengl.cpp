@@ -50,15 +50,26 @@ struct ScreenRectVertex {
  *
  * The projection part of the matrix is trivial, hence these operations are represented
  * by a 3x2 matrix.
+ *
+ * @param flipped Whether the frame should be flipped upside down.
  */
-static std::array<GLfloat, 3 * 2> MakeOrthographicMatrix(const float width, const float height) {
+static std::array<GLfloat, 3 * 2> MakeOrthographicMatrix(const float width, const float height,
+                                                         bool flipped) {
+
     std::array<GLfloat, 3 * 2> matrix; // Laid out in column-major order
 
-    // clang-format off
-    matrix[0] = 2.f / width; matrix[2] = 0.f;           matrix[4] = -1.f;
-    matrix[1] = 0.f;         matrix[3] = -2.f / height; matrix[5] = 1.f;
     // Last matrix row is implicitly assumed to be [0, 0, 1].
-    // clang-format on
+    if (flipped) {
+        // clang-format off
+        matrix[0] = 2.f / width; matrix[2] = 0.f;           matrix[4] = -1.f;
+        matrix[1] = 0.f;         matrix[3] = 2.f / height;  matrix[5] = -1.f;
+        // clang-format on
+    } else {
+        // clang-format off
+        matrix[0] = 2.f / width; matrix[2] = 0.f;           matrix[4] = -1.f;
+        matrix[1] = 0.f;         matrix[3] = -2.f / height; matrix[5] = 1.f;
+        // clang-format on
+    }
 
     return matrix;
 }
@@ -664,14 +675,13 @@ void RendererOpenGL::DrawScreens(const Layout::FramebufferLayout& layout, bool f
     const auto& bottom_screen = layout.bottom_screen;
 
     glViewport(0, 0, layout.width, layout.height);
-
     if (render_window.NeedsClearing()) {
         glClear(GL_COLOR_BUFFER_BIT);
     }
 
     // Set projection matrix
     std::array<GLfloat, 3 * 2> ortho_matrix =
-        MakeOrthographicMatrix((float)layout.width, (float)layout.height);
+        MakeOrthographicMatrix((float)layout.width, (float)layout.height, flipped);
     glUniformMatrix3x2fv(uniform_modelview_matrix, 1, GL_FALSE, ortho_matrix.data());
 
     // Bind texture in Texture Unit 0
@@ -889,6 +899,7 @@ void RendererOpenGL::CleanupVideoDumping() {
         std::scoped_lock lock{mailbox->swap_chain_lock};
         mailbox->quit = true;
     }
+    mailbox->free_cv.notify_one();
 }
 
 void RendererOpenGL::Sync() {
