@@ -17,11 +17,15 @@ using namespace LibRetro;
 
 namespace LibRetro {
 
+namespace {
+
 static retro_video_refresh_t video_cb;
 //static retro_audio_sample_t audio_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
+
+} // namespace
 
 void UploadVideoFrame(const void* data, unsigned width, unsigned height, size_t pitch) {
     return video_cb(data, width, height, pitch);

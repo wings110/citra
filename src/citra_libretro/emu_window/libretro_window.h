@@ -37,13 +37,13 @@ public:
     void UpdateLayout();
 
     /// Enables for deferring a renderer's initalisation.
-    bool ShouldDeferRendererInit();
+    bool ShouldDeferRendererInit() override;
 
     /// States whether a frame has been submitted. Resets after call.
     bool HasSubmittedFrame();
 
     /// Flags that the framebuffer should be cleared.
-    bool NeedsClearing() const;
+    bool NeedsClearing() const override;
 
     /// Creates state for a currently running OpenGL context.
     void CreateContext();
@@ -55,7 +55,6 @@ private:
     /// Called when a configuration change affects the minimal size of the window
     void OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) override;
 
-    float scale = 2;
     int width;
     int height;
 
