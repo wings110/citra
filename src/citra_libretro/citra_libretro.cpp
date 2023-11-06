@@ -15,6 +15,10 @@
 #include "libretro.h"
 
 #include "audio_core/libretro_sink.h"
+#include "video_core/renderer_opengl/renderer_opengl.h"
+#include "video_core/renderer_vulkan/renderer_vulkan.h"
+#include "video_core/video_core.h"
+
 #include "citra_libretro/citra_libretro.h"
 #include "citra_libretro/core_settings.h"
 #include "citra_libretro/environment.h"
@@ -30,9 +34,6 @@
 #include "core/loader/loader.h"
 #include "core/frontend/applets/default_applets.h"
 #include "core/frontend/image_interface.h"
-#include "video_core/renderer_opengl/renderer_opengl.h"
-#include "video_core/renderer_vulkan/renderer_vulkan.h"
-#include "video_core/video_core.h"
 
 #ifdef HAVE_LIBRETRO_VFS
 #include <streams/file_stream_transforms.h>
@@ -244,7 +245,7 @@ void UpdateSettings() {
         Settings::values.cpu_clock_percentage = scale;
     }
 
-    auto graphicsApi = std::string("OpenGL");//LibRetro::FetchVariable("citra_graphics_api", "Auto");
+    auto graphicsApi = LibRetro::FetchVariable("citra_graphics_api", "Auto");
     if (graphicsApi == "Auto") {
         Settings::values.graphics_api = LibRetro::GetPrefferedHWRenderer();
     } else if (graphicsApi == "Vulkan") {
@@ -553,30 +554,29 @@ void context_reset() {
                   "Likely memory leak: context_destroy() was not called before context_reset()!");
     }
 
-    // Check to see if the frontend provides us with OpenGL symbols
-    if (emu_instance->hw_render.get_proc_address != nullptr) {
-        bool loaded = Settings::values.use_gles
-            ? gladLoadGLES2Loader((GLADloadproc)load_opengl_func)
-            : gladLoadGLLoader((GLADloadproc)load_opengl_func);
-
-        if (!loaded) {
-            LOG_CRITICAL(Frontend, "Glad failed to load (frontend-provided symbols)!");
-            return;
-        }
-    } else {
-        // Else, try to load them on our own
-        if (!gladLoadGL()) {
-            LOG_CRITICAL(Frontend, "Glad failed to load (internal symbols)!");
-            return;
-        }
-    }
-
     switch (Settings::values.graphics_api.GetValue()) {
     case Settings::GraphicsAPI::Vulkan:
         VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
         break;
     case Settings::GraphicsAPI::OpenGL:
     default:
+        // Check to see if the frontend provides us with OpenGL symbols
+        if (emu_instance->hw_render.get_proc_address != nullptr) {
+            bool loaded = Settings::values.use_gles
+                ? gladLoadGLES2Loader((GLADloadproc)load_opengl_func)
+                : gladLoadGLLoader((GLADloadproc)load_opengl_func);
+
+            if (!loaded) {
+                LOG_CRITICAL(Frontend, "Glad failed to load (frontend-provided symbols)!");
+                return;
+            }
+        } else {
+            // Else, try to load them on our own
+            if (!gladLoadGL()) {
+                LOG_CRITICAL(Frontend, "Glad failed to load (internal symbols)!");
+                return;
+            }
+        }
         VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
     }
 
@@ -600,11 +600,48 @@ void retro_reset() {
     context_reset(); // Force the renderer to appear
 }
 
+static const VkApplicationInfo *vk_application_info(void)
+{
+   static const VkApplicationInfo info = {
+      VK_STRUCTURE_TYPE_APPLICATION_INFO,
+      nullptr,
+      "Citra-libretro",
+      0,
+      "Citra-libretro",
+      0,
+      VK_API_VERSION_1_1,
+   };
+   LOG_INFO(Frontend, "vk_application_info");
+   return &info;
+}
+
+static bool vk_create_device(
+    struct retro_vulkan_context *libretro_context,
+    VkInstance instance,
+    VkPhysicalDevice gpu,
+    VkSurfaceKHR surface,
+    PFN_vkGetInstanceProcAddr get_instance_proc_addr,
+    const char **required_device_extensions,
+    unsigned num_required_device_extensions,
+    const char **required_device_layers,
+    unsigned num_required_device_layers,
+    const VkPhysicalDeviceFeatures *required_features)
+{
+    LOG_INFO(Frontend, "vk_create_device");
+    return false;
+}
+
 /**
  * libretro callback; Called when a game is to be loaded.
  */
 bool retro_load_game(const struct retro_game_info* info) {
     LOG_INFO(Frontend, "Starting Citra RetroArch game...");
+
+    if(!emu_instance->hw_setup) {
+        emu_instance->emu_window = std::make_unique<EmuWindow_LibRetro>();
+    }
+
+    UpdateSettings();
 
     LibRetro::settings.file_path = info->path;
 
@@ -622,7 +659,7 @@ bool retro_load_game(const struct retro_game_info* info) {
         case Settings::GraphicsAPI::Vulkan:
             LOG_INFO(Frontend, "Using Vulkan hw renderer");
             emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_VULKAN;
-            emu_instance->hw_render.version_major = 1;
+            emu_instance->hw_render.version_major = VK_API_VERSION_1_1;
             emu_instance->hw_render.version_minor = 0;
             break;
         case Settings::GraphicsAPI::OpenGL:
@@ -654,11 +691,19 @@ bool retro_load_game(const struct retro_game_info* info) {
             return false;
         }
 
-        emu_instance->emu_window = std::make_unique<EmuWindow_LibRetro>();
+        if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan) {
+            LibRetro::SetHWRenderNegotiationInterface({
+                RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN,
+                RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN_VERSION,
+
+                vk_application_info,
+                vk_create_device,
+                nullptr,
+            });
+        }
+
         emu_instance->hw_setup = true;
     }
-
-    UpdateSettings();
 
     const Core::System::ResultStatus load_result{Core::System::GetInstance().Load(
         *emu_instance->emu_window, LibRetro::settings.file_path)};

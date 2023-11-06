@@ -12,6 +12,7 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "libretro.h"
+#include "libretro_vulkan.h"
 
 namespace LibRetro {
 
@@ -51,6 +52,8 @@ bool SetPixelFormat(const retro_pixel_format fmt);
 
 /// Sets the H/W rendering context.
 bool SetHWRenderer(retro_hw_render_callback* cb);
+
+bool SetHWRenderNegotiationInterface(const retro_hw_render_context_negotiation_interface_vulkan iface);
 
 /// Sets the async audio callback.
 bool SetAudioCallback(retro_audio_callback* cb);

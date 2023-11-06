@@ -64,6 +64,10 @@ bool SetHWRenderer(retro_hw_render_callback* cb) {
     return environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, cb);
 }
 
+bool SetHWRenderNegotiationInterface(const retro_hw_render_context_negotiation_interface_vulkan iface) {
+    return environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE, (void*)&iface);
+}
+
 bool SetAudioCallback(retro_audio_callback* cb) {
     return environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, cb);
 }
