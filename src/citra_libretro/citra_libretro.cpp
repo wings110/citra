@@ -508,10 +508,12 @@ void retro_run() {
         screen_swap_btn_state = screen_swap_btn;
     }
 
-    // We can't assume that the frontend has been nice and preserved all OpenGL settings. Reset.
-    auto last_state = OpenGL::OpenGLState::GetCurState();
-    ResetGLState();
-    last_state.Apply();
+    if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::OpenGL) {
+        // We can't assume that the frontend has been nice and preserved all OpenGL settings. Reset.
+        auto last_state = OpenGL::OpenGLState::GetCurState();
+        ResetGLState();
+        last_state.Apply();
+    }
 
     while (!emu_instance->emu_window->HasSubmittedFrame()) {
         auto result = Core::System::GetInstance().RunLoop();
