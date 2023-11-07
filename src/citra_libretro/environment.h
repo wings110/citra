@@ -44,6 +44,8 @@ retro_log_printf_t GetLoggingBackend();
 /// Returns graphics api based on global frontend setting
 Settings::GraphicsAPI GetPrefferedHWRenderer();
 
+const struct retro_hw_render_interface_vulkan* GetHWRenderInterfaceVulkan();
+
 /// Displays information about the kinds of controllers that this Citra recreates.
 bool SetControllerInfo(const retro_controller_info info[]);
 

@@ -24,6 +24,7 @@ static retro_video_refresh_t video_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
+static const struct retro_hw_render_interface_vulkan *vulkan;
 
 } // namespace
 
@@ -99,6 +100,19 @@ bool DisplayMessage(const char* sg) {
     msg.msg = sg;
     msg.frames = 60 * 10;
     return environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &msg);
+}
+
+const struct retro_hw_render_interface_vulkan* GetHWRenderInterfaceVulkan() {
+    if (!environ_cb(RETRO_ENVIRONMENT_GET_HW_RENDER_INTERFACE, (void**)&vulkan) || !vulkan) {
+        return nullptr;
+    }
+
+    if (vulkan->interface_version != RETRO_HW_RENDER_INTERFACE_VULKAN_VERSION) {
+        vulkan = nullptr;
+        return nullptr;
+    }
+
+    return vulkan;
 }
 
 std::string FetchVariable(std::string key, std::string def) {

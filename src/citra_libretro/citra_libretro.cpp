@@ -558,8 +558,15 @@ void context_reset() {
 
     switch (Settings::values.graphics_api.GetValue()) {
     case Settings::GraphicsAPI::Vulkan:
+    {
+        const struct retro_hw_render_interface_vulkan* vulkan = LibRetro::GetHWRenderInterfaceVulkan();
+        if (vulkan == nullptr) {
+            LOG_CRITICAL(Frontend, "Get Vulkan render interface failed");
+            return;
+        }
         VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
         break;
+    }
     case Settings::GraphicsAPI::OpenGL:
     default:
         // Check to see if the frontend provides us with OpenGL symbols
