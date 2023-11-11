@@ -135,6 +135,26 @@ std::string GetReadableVersion(u32 version) {
 
 } // Anonymous namespace
 
+Instance::Instance(Core::TelemetrySession& telemetry, Frontend::EmuWindow& window,
+                   const struct retro_hw_render_interface_vulkan* vulkan)
+    : instance{CreateInstance(window.GetWindowInfo().type, vulkan->get_instance_proc_addr)}
+{
+    physical_device = vulkan->gpu;
+    available_extensions = GetSupportedExtensions(physical_device);
+    properties = physical_device.getProperties();
+
+    CollectTelemetryParameters(telemetry);
+    CreateDevice();
+    CollectToolingInfo();
+    LOG_INFO(Debug, "CreateFormatTable");
+    CreateFormatTable();
+    LOG_INFO(Debug, "CreateCustomFormatTable");
+    CreateCustomFormatTable();
+    LOG_INFO(Debug, "CreateAttribTable");
+    CreateAttribTable();
+    LOG_INFO(Debug, "Instance ctor end");
+}
+
 Instance::Instance(bool enable_validation, bool dump_command_buffers)
     : library{OpenLibrary()}, instance{CreateInstance(*library,
                                                       Frontend::WindowSystemType::Headless,

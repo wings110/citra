@@ -27,6 +27,9 @@ std::shared_ptr<Common::DynamicLibrary> OpenLibrary(
 
 vk::SurfaceKHR CreateSurface(vk::Instance instance, const Frontend::EmuWindow& emu_window);
 
+vk::UniqueInstance CreateInstance(Frontend::WindowSystemType window_type,
+                                  PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr);
+
 vk::UniqueInstance CreateInstance(const Common::DynamicLibrary& library,
                                   Frontend::WindowSystemType window_type, bool enable_validation,
                                   bool dump_command_buffers);

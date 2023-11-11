@@ -18,6 +18,7 @@
 #include "video_core/renderer_vulkan/vk_renderpass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"
+#include "libretro_vulkan.h"
 
 namespace Core {
 class System;
@@ -64,6 +65,8 @@ class RendererVulkan : public VideoCore::RendererBase {
     static constexpr std::size_t PRESENT_PIPELINES = 3;
 
 public:
+    explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
+                            const struct retro_hw_render_interface_vulkan* vulkan);
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                             Frontend::EmuWindow* secondary_window);
     ~RendererVulkan() override;

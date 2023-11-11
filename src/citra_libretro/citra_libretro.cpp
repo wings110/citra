@@ -564,7 +564,7 @@ void context_reset() {
             LOG_CRITICAL(Frontend, "Get Vulkan render interface failed");
             return;
         }
-        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
+        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, vulkan);
         break;
     }
     case Settings::GraphicsAPI::OpenGL:

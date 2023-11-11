@@ -52,6 +52,32 @@ constexpr static std::array<vk::DescriptorSetLayoutBinding, 1> PRESENT_BINDINGS 
 }};
 
 RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
+                               const struct retro_hw_render_interface_vulkan* vulkan)
+    : RendererBase{system, window, nullptr}, memory{system.Memory()},
+      instance{system.TelemetrySession(), window, vulkan},
+      scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
+      main_window{window, instance, scheduler},
+      vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
+                    VERTEX_BUFFER_SIZE},
+      rasterizer{memory,
+                 system.CustomTexManager(),
+                 *this,
+                 render_window,
+                 instance,
+                 scheduler,
+                 pool,
+                 renderpass_cache,
+                 main_window.ImageCount()},
+      present_set_provider{instance, pool, PRESENT_BINDINGS} {
+    LOG_INFO(Debug, "CompileShaders");
+    CompileShaders();
+    LOG_INFO(Debug, "BuildLayouts");
+    BuildLayouts();
+    LOG_INFO(Debug, "BuildPipelines");
+    BuildPipelines();
+}
+
+RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                                Frontend::EmuWindow* secondary_window)
     : RendererBase{system, window, secondary_window}, memory{system.Memory()},
       instance{system.TelemetrySession(), window, Settings::values.physical_device.GetValue()},

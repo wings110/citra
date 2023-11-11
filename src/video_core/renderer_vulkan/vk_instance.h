@@ -9,6 +9,7 @@
 #include "video_core/rasterizer_cache/pixel_format.h"
 #include "video_core/regs_pipeline.h"
 #include "video_core/renderer_vulkan/vk_platform.h"
+#include "libretro_vulkan.h"
 
 namespace Core {
 class TelemetrySession;
@@ -40,6 +41,8 @@ struct FormatTraits {
 
 class Instance {
 public:
+    explicit Instance(Core::TelemetrySession& telemetry, Frontend::EmuWindow& window,
+                      const struct retro_hw_render_interface_vulkan* vulkan);
     explicit Instance(bool validation = false, bool dump_command_buffers = false);
     explicit Instance(Core::TelemetrySession& telemetry, Frontend::EmuWindow& window,
                       u32 physical_device_index);
