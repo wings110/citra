@@ -66,7 +66,8 @@ class RendererVulkan : public VideoCore::RendererBase {
 
 public:
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
-                            const struct retro_hw_render_interface_vulkan* vulkan);
+                            const struct retro_hw_render_interface_vulkan* vulkan,
+                            VkSurfaceKHR vk_surface);
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                             Frontend::EmuWindow* secondary_window);
     ~RendererVulkan() override;

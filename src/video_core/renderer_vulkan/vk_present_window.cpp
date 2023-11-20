@@ -97,6 +97,50 @@ bool CanBlitToSwapchain(const vk::PhysicalDevice& physical_device, vk::Format fo
 } // Anonymous namespace
 
 PresentWindow::PresentWindow(Frontend::EmuWindow& emu_window_, const Instance& instance_,
+                             Scheduler& scheduler_, VkSurfaceKHR surface_)
+    : emu_window{emu_window_}, instance{instance_}, scheduler{scheduler_},
+      surface{surface_},
+      next_surface{surface}, swapchain{instance, emu_window.GetFramebufferLayout().width,
+                                       emu_window.GetFramebufferLayout().height, surface},
+      graphics_queue{instance.GetGraphicsQueue()}, present_renderpass{CreateRenderpass()},
+      vsync_enabled{Settings::values.use_vsync_new.GetValue()},
+      blit_supported{
+          CanBlitToSwapchain(instance.GetPhysicalDevice(), swapchain.GetSurfaceFormat().format)},
+      use_present_thread{Settings::values.async_presentation.GetValue()},
+      last_render_surface{emu_window.GetWindowInfo().render_surface} {
+    LOG_INFO(Debug, "PresentWindow::PresentWindow");
+    const u32 num_images = swapchain.GetImageCount();
+    const vk::Device device = instance.GetDevice();
+
+    const vk::CommandPoolCreateInfo pool_info = {
+        .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer |
+                 vk::CommandPoolCreateFlagBits::eTransient,
+        .queueFamilyIndex = instance.GetGraphicsQueueFamilyIndex(),
+    };
+    command_pool = device.createCommandPool(pool_info);
+
+    const vk::CommandBufferAllocateInfo alloc_info = {
+        .commandPool = command_pool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = num_images,
+    };
+    const std::vector command_buffers = device.allocateCommandBuffers(alloc_info);
+
+    swap_chain.resize(num_images);
+    for (u32 i = 0; i < num_images; i++) {
+        Frame& frame = swap_chain[i];
+        frame.cmdbuf = command_buffers[i];
+        frame.render_ready = device.createSemaphore({});
+        frame.present_done = device.createFence({.flags = vk::FenceCreateFlagBits::eSignaled});
+        free_queue.push(&frame);
+    }
+
+    if (use_present_thread) {
+        present_thread = std::jthread([this](std::stop_token token) { PresentThread(token); });
+    }
+}
+
+PresentWindow::PresentWindow(Frontend::EmuWindow& emu_window_, const Instance& instance_,
                              Scheduler& scheduler_)
     : emu_window{emu_window_}, instance{instance_}, scheduler{scheduler_},
       surface{CreateSurface(instance.GetInstance(), emu_window)},

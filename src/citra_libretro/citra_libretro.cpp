@@ -63,6 +63,7 @@ public:
     std::unique_ptr<EmuWindow_LibRetro> emu_window;
     bool hw_setup = false;
     struct retro_hw_render_callback hw_render {};
+    VkSurfaceKHR vk_surface;
 };
 
 CitraLibRetro* emu_instance;
@@ -564,7 +565,7 @@ void context_reset() {
             LOG_CRITICAL(Frontend, "Get Vulkan render interface failed");
             return;
         }
-        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, vulkan);
+        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, vulkan, emu_instance->vk_surface);
         break;
     }
     case Settings::GraphicsAPI::OpenGL:
@@ -608,7 +609,7 @@ void retro_reset() {
     }
     context_reset(); // Force the renderer to appear
 }
-
+/*
 static const VkApplicationInfo *vk_application_info(void)
 {
    static const VkApplicationInfo info = {
@@ -623,7 +624,7 @@ static const VkApplicationInfo *vk_application_info(void)
    LOG_INFO(Frontend, "vk_application_info");
    return &info;
 }
-
+*/
 static bool vk_create_device(
     struct retro_vulkan_context *libretro_context,
     VkInstance instance,
@@ -636,7 +637,8 @@ static bool vk_create_device(
     unsigned num_required_device_layers,
     const VkPhysicalDeviceFeatures *required_features)
 {
-    LOG_INFO(Frontend, "vk_create_device");
+    LOG_INFO(Frontend, "vk_create_device surface = %p", (void*)surface);
+    emu_instance->vk_surface = surface;
     return false;
 }
 
@@ -701,14 +703,7 @@ bool retro_load_game(const struct retro_game_info* info) {
         }
 
         if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan) {
-            LibRetro::SetHWRenderNegotiationInterface({
-                RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN,
-                RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN_VERSION,
-
-                vk_application_info,
-                vk_create_device,
-                nullptr,
-            });
+            LibRetro::SetHWRenderNegotiationInterface(nullptr, vk_create_device);
         }
 
         emu_instance->hw_setup = true;

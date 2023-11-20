@@ -37,6 +37,8 @@ struct Frame {
 class PresentWindow final {
 public:
     explicit PresentWindow(Frontend::EmuWindow& emu_window, const Instance& instance,
+                           Scheduler& scheduler, VkSurfaceKHR surface);
+    explicit PresentWindow(Frontend::EmuWindow& emu_window, const Instance& instance,
                            Scheduler& scheduler);
     ~PresentWindow();
 
