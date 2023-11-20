@@ -213,6 +213,7 @@ std::vector<const char*> GetInstanceExtensions(Frontend::WindowSystemType window
 #endif
 
     switch (window_type) {
+    case Frontend::WindowSystemType::LibRetro:
     case Frontend::WindowSystemType::Headless:
         break;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
