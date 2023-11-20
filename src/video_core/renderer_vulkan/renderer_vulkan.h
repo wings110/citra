@@ -18,7 +18,6 @@
 #include "video_core/renderer_vulkan/vk_renderpass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"
-#include "libretro_vulkan.h"
 
 namespace Core {
 class System;
@@ -66,7 +65,9 @@ class RendererVulkan : public VideoCore::RendererBase {
 
 public:
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
-                            const struct retro_hw_render_interface_vulkan* vulkan,
+                            PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr,
+                            VkInstance vk_instance,
+                            VkPhysicalDevice gpu,
                             VkSurfaceKHR vk_surface);
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                             Frontend::EmuWindow* secondary_window);
@@ -83,6 +84,10 @@ public:
     void SwapBuffers() override;
     void TryPresent(int timeout_ms, bool is_secondary) override {}
     void Sync() override;
+
+    Instance* GetInstance() {
+        return &instance;
+    }
 
 private:
     void ReloadPipeline();

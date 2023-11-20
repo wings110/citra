@@ -135,11 +135,10 @@ std::string GetReadableVersion(u32 version) {
 
 } // Anonymous namespace
 
-Instance::Instance(Core::TelemetrySession& telemetry, Frontend::EmuWindow& window,
-                   const struct retro_hw_render_interface_vulkan* vulkan)
-    : instance{CreateInstance(window.GetWindowInfo().type, vulkan->get_instance_proc_addr)}
+Instance::Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkInstance vk_instance, VkPhysicalDevice gpu)
+    : instance{CreateInstance(Frontend::WindowSystemType::LibRetro, vkGetInstanceProcAddr)}
 {
-    physical_device = vulkan->gpu;
+    physical_device = gpu;
     available_extensions = GetSupportedExtensions(physical_device);
     properties = physical_device.getProperties();
 

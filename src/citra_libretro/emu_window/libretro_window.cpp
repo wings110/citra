@@ -53,7 +53,7 @@ void ResetGLState() {
 
 EmuWindow_LibRetro::EmuWindow_LibRetro() {
     strict_context_required = true;
-    window_info.type = Frontend::WindowSystemType::LibRetro;
+    //window_info.type = Frontend::WindowSystemType::LibRetro;
     //window_info.render_surface = nullptr;
 }
 

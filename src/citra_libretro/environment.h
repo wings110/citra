@@ -55,7 +55,7 @@ bool SetPixelFormat(const retro_pixel_format fmt);
 /// Sets the H/W rendering context.
 bool SetHWRenderer(retro_hw_render_callback* cb);
 
-bool SetHWRenderNegotiationInterface(const retro_vulkan_get_application_info_t vk_application_info, const retro_vulkan_create_device_t vk_create_device);
+bool SetVkInitCallback(const retro_vulkan_create_device_t vk_create_device);
 
 /// Sets the async audio callback.
 bool SetAudioCallback(retro_audio_callback* cb);

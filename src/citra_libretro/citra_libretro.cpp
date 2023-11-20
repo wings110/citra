@@ -558,7 +558,7 @@ void context_reset() {
     }
 
     switch (Settings::values.graphics_api.GetValue()) {
-    case Settings::GraphicsAPI::Vulkan:
+    /*case Settings::GraphicsAPI::Vulkan:
     {
         const struct retro_hw_render_interface_vulkan* vulkan = LibRetro::GetHWRenderInterfaceVulkan();
         if (vulkan == nullptr) {
@@ -567,7 +567,7 @@ void context_reset() {
         }
         VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, vulkan, emu_instance->vk_surface);
         break;
-    }
+    }*/
     case Settings::GraphicsAPI::OpenGL:
     default:
         // Check to see if the frontend provides us with OpenGL symbols
@@ -609,24 +609,9 @@ void retro_reset() {
     }
     context_reset(); // Force the renderer to appear
 }
-/*
-static const VkApplicationInfo *vk_application_info(void)
-{
-   static const VkApplicationInfo info = {
-      VK_STRUCTURE_TYPE_APPLICATION_INFO,
-      nullptr,
-      "Citra-libretro",
-      0,
-      "Citra-libretro",
-      0,
-      VK_API_VERSION_1_1,
-   };
-   LOG_INFO(Frontend, "vk_application_info");
-   return &info;
-}
-*/
+
 static bool vk_create_device(
-    struct retro_vulkan_context *libretro_context,
+    struct retro_vulkan_context *context,
     VkInstance instance,
     VkPhysicalDevice gpu,
     VkSurfaceKHR surface,
@@ -637,9 +622,22 @@ static bool vk_create_device(
     unsigned num_required_device_layers,
     const VkPhysicalDeviceFeatures *required_features)
 {
-    LOG_INFO(Frontend, "vk_create_device surface = %p", (void*)surface);
-    emu_instance->vk_surface = surface;
-    return false;
+    VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
+        Core::System::GetInstance(),
+        *emu_instance->emu_window,
+        get_instance_proc_addr,
+        instance, gpu, surface
+    );
+
+    Vulkan::Instance* vkInstance = static_cast<Vulkan::RendererVulkan*>(VideoCore::g_renderer.get())->GetInstance();
+    context->gpu = vkInstance->GetPhysicalDevice();
+    context->device = vkInstance->GetDevice();
+    context->queue = vkInstance->GetGraphicsQueue();
+    context->queue_family_index = vkInstance->GetGraphicsQueueFamilyIndex();
+    context->presentation_queue = context->queue;
+    context->presentation_queue_family_index = context->queue_family_index;
+
+    return true;
 }
 
 /**
@@ -703,7 +701,7 @@ bool retro_load_game(const struct retro_game_info* info) {
         }
 
         if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan) {
-            LibRetro::SetHWRenderNegotiationInterface(nullptr, vk_create_device);
+            LibRetro::SetVkInitCallback(vk_create_device);
         }
 
         emu_instance->hw_setup = true;
