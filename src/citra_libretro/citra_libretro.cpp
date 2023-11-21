@@ -64,6 +64,7 @@ public:
     bool hw_setup = false;
     struct retro_hw_render_callback hw_render {};
     VkSurfaceKHR vk_surface;
+    Vulkan::Instance* vk_instance;
 };
 
 CitraLibRetro* emu_instance;
@@ -558,16 +559,22 @@ void context_reset() {
     }
 
     switch (Settings::values.graphics_api.GetValue()) {
-    /*case Settings::GraphicsAPI::Vulkan:
+    case Settings::GraphicsAPI::Vulkan:
     {
         const struct retro_hw_render_interface_vulkan* vulkan = LibRetro::GetHWRenderInterfaceVulkan();
         if (vulkan == nullptr) {
             LOG_CRITICAL(Frontend, "Get Vulkan render interface failed");
             return;
         }
-        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(Core::System::GetInstance(), *emu_instance->emu_window, vulkan, emu_instance->vk_surface);
+        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
+            Core::System::GetInstance(),
+            *emu_instance->emu_window,
+            vulkan->get_instance_proc_addr,
+            vulkan->gpu,
+            emu_instance->vk_surface
+        );
         break;
-    }*/
+    }
     case Settings::GraphicsAPI::OpenGL:
     default:
         // Check to see if the frontend provides us with OpenGL symbols
@@ -622,6 +629,11 @@ static bool vk_create_device(
     unsigned num_required_device_layers,
     const VkPhysicalDeviceFeatures *required_features)
 {
+    emu_instance->vk_surface = surface;
+    return false;
+/*
+    emu_instance->vk_instance = new Vulkan::Instance(Core::System::GetInstance().TelemetrySession(), get_instance_proc_addr, gpu);
+
     VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
         Core::System::GetInstance(),
         *emu_instance->emu_window,
@@ -638,8 +650,13 @@ static bool vk_create_device(
     context->presentation_queue_family_index = context->queue_family_index;
 
     return true;
+*/
 }
-
+/*
+static void vk_destroy_device() {
+    delete emu_instance->vk_instance;
+}
+*/
 /**
  * libretro callback; Called when a game is to be loaded.
  */
@@ -655,10 +672,6 @@ bool retro_load_game(const struct retro_game_info* info) {
     LibRetro::settings.file_path = info->path;
 
     if(!emu_instance->hw_setup) {
-#ifndef HAVE_LIBNX
-        LibRetro::SetHWSharedContext();
-#endif
-
         if (!LibRetro::SetPixelFormat(RETRO_PIXEL_FORMAT_XRGB8888)) {
             LOG_CRITICAL(Frontend, "XRGB8888 is not supported.");
             LibRetro::DisplayMessage("XRGB8888 is not supported.");
@@ -674,6 +687,9 @@ bool retro_load_game(const struct retro_game_info* info) {
         case Settings::GraphicsAPI::OpenGL:
         default:
             LOG_INFO(Frontend, "Using OpenGL hw renderer");
+#ifndef HAVE_LIBNX
+            LibRetro::SetHWSharedContext();
+#endif
 #if defined(HAVE_LIBNX)
             emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGL;
             emu_instance->hw_render.version_major = 0;
@@ -701,7 +717,7 @@ bool retro_load_game(const struct retro_game_info* info) {
         }
 
         if (Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::Vulkan) {
-            LibRetro::SetVkInitCallback(vk_create_device);
+            LibRetro::SetVkDeviceCallbacks(vk_create_device, nullptr);
         }
 
         emu_instance->hw_setup = true;

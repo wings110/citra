@@ -516,6 +516,8 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
     }
 
     swapchain.Present();
+
+    emu_window.SwapBuffers();
 }
 
 vk::RenderPass PresentWindow::CreateRenderpass() {

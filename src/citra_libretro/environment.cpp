@@ -65,14 +65,14 @@ bool SetHWRenderer(retro_hw_render_callback* cb) {
     return environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, cb);
 }
 
-bool SetVkInitCallback(const retro_vulkan_create_device_t vk_create_device) {
+bool SetVkDeviceCallbacks(const retro_vulkan_create_device_t vk_create_device, const retro_vulkan_destroy_device_t vk_destroy_device) {
     static const retro_hw_render_context_negotiation_interface_vulkan iface = {
         RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN,
         RETRO_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE_VULKAN_VERSION,
 
         nullptr,
         vk_create_device,
-        nullptr,
+        vk_destroy_device,
     };
     return environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER_CONTEXT_NEGOTIATION_INTERFACE, (void*)&iface);
 }

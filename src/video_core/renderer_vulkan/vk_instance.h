@@ -40,7 +40,7 @@ struct FormatTraits {
 
 class Instance {
 public:
-    explicit Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkInstance vk_instance, VkPhysicalDevice gpu);
+    explicit Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkPhysicalDevice gpu);
     explicit Instance(bool validation = false, bool dump_command_buffers = false);
     explicit Instance(Core::TelemetrySession& telemetry, Frontend::EmuWindow& window,
                       u32 physical_device_index);

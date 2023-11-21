@@ -135,7 +135,7 @@ std::string GetReadableVersion(u32 version) {
 
 } // Anonymous namespace
 
-Instance::Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkInstance vk_instance, VkPhysicalDevice gpu)
+Instance::Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkPhysicalDevice gpu)
     : instance{CreateInstance(Frontend::WindowSystemType::LibRetro, vkGetInstanceProcAddr)}
 {
     physical_device = gpu;

@@ -87,6 +87,8 @@ private:
     /// Creates the image acquired and present ready semaphores
     void RefreshSemaphores();
 
+    bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
+
 private:
     const Instance& instance;
     vk::SwapchainKHR swapchain{};
