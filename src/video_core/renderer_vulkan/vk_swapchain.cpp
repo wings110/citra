@@ -184,7 +184,6 @@ void Swapchain::Create(u32 width_, u32 height_, vk::SurfaceKHR surface_) {
     }
 
     chain.current_index = -1;
-    swapchain = reinterpret_cast<VkSwapchainKHR>(&chain);
 #else
     try {
         swapchain = instance.GetDevice().createSwapchainKHR(swapchain_info);
@@ -193,6 +192,7 @@ void Swapchain::Create(u32 width_, u32 height_, vk::SurfaceKHR surface_) {
         UNREACHABLE();
     }
 #endif
+    LOG_INFO(Debug, "SetupImages");
     SetupImages();
     LOG_INFO(Debug, "RefreshSemaphores");
     RefreshSemaphores();
@@ -231,14 +231,13 @@ bool Swapchain::AcquireNextImage() {
 
 void Swapchain::Present() {
 #ifdef HAVE_LIBRETRO
-    VkSwapchainKHR_T* swch = (VkSwapchainKHR_T*)&swapchain;
-    std::unique_lock<std::mutex> lock(swch->mutex);
+    std::unique_lock<std::mutex> lock(chain.mutex);
     chain.current_index = image_index;
 
-    vulkan->set_image(vulkan->handle, &swch->images[image_index].retro_image,
+    vulkan->set_image(vulkan->handle, &chain.images[image_index].retro_image,
                     0, nullptr, vulkan->queue_index);
 
-    swch->condVar.notify_all();
+    chain.condVar.notify_all();
 #else
     if (needs_recreation) {
         return;
@@ -391,10 +390,10 @@ void Swapchain::RefreshSemaphores() {
 
 void Swapchain::SetupImages() {
 #ifdef HAVE_LIBRETRO
-    VkSwapchainKHR_T* swch = (VkSwapchainKHR_T*)&swapchain;
-    images.resize(swch->count);
-    for (uint32_t i = 0; i < swch->count; ++i) {
-        images.push_back(swch->images[i].handle);
+    images.clear();
+    images.resize(chain.count);
+    for (uint32_t i = 0; i < chain.count; ++i) {
+        images.push_back(chain.images[i].handle);
     }
 #else
     vk::Device device = instance.GetDevice();
