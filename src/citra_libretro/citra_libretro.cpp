@@ -552,16 +552,10 @@ void context_reset() {
     rglgen_resolve_symbols_custom(&eglGetProcAddress, &rglgen_symbol_map_citra);
 #endif
 
-    // Recreate our renderer, so it can reset it's state.
-    if (VideoCore::g_renderer != nullptr) {
-        LOG_ERROR(Frontend,
-                  "Likely memory leak: context_destroy() was not called before context_reset()!");
-    }
-
     switch (Settings::values.graphics_api.GetValue()) {
     case Settings::GraphicsAPI::Vulkan:
     {
-        const struct retro_hw_render_interface_vulkan* vulkan = LibRetro::GetHWRenderInterfaceVulkan();
+        /*const struct retro_hw_render_interface_vulkan* vulkan = LibRetro::GetHWRenderInterfaceVulkan();
         if (vulkan == nullptr) {
             LOG_CRITICAL(Frontend, "Get Vulkan render interface failed");
             return;
@@ -573,10 +567,17 @@ void context_reset() {
             vulkan->gpu,
             emu_instance->vk_surface
         );
+        */
+        static_cast<Vulkan::RendererVulkan*>(VideoCore::g_renderer.get())->CreateMainWindow(emu_instance->vk_surface);
         break;
     }
     case Settings::GraphicsAPI::OpenGL:
     default:
+        // Recreate our renderer, so it can reset it's state.
+        if (VideoCore::g_renderer != nullptr) {
+            LOG_ERROR(Frontend,
+                    "Likely memory leak: context_destroy() was not called before context_reset()!");
+        }
         // Check to see if the frontend provides us with OpenGL symbols
         if (emu_instance->hw_render.get_proc_address != nullptr) {
             bool loaded = Settings::values.use_gles
@@ -603,6 +604,7 @@ void context_reset() {
 
     emu_instance->emu_window->UpdateLayout();
     emu_instance->emu_window->CreateContext();
+    LOG_INFO(Debug, "context_reset end");
 }
 
 void context_destroy() {
@@ -630,15 +632,12 @@ static bool vk_create_device(
     const VkPhysicalDeviceFeatures *required_features)
 {
     emu_instance->vk_surface = surface;
-    return false;
-/*
-    emu_instance->vk_instance = new Vulkan::Instance(Core::System::GetInstance().TelemetrySession(), get_instance_proc_addr, gpu);
+    //emu_instance->vk_instance = new Vulkan::Instance(Core::System::GetInstance().TelemetrySession(), get_instance_proc_addr, gpu);
 
     VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
         Core::System::GetInstance(),
         *emu_instance->emu_window,
-        get_instance_proc_addr,
-        instance, gpu, surface
+        get_instance_proc_addr, gpu
     );
 
     Vulkan::Instance* vkInstance = static_cast<Vulkan::RendererVulkan*>(VideoCore::g_renderer.get())->GetInstance();
@@ -650,7 +649,6 @@ static bool vk_create_device(
     context->presentation_queue_family_index = context->queue_family_index;
 
     return true;
-*/
 }
 /*
 static void vk_destroy_device() {

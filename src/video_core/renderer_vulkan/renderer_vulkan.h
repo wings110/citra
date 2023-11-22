@@ -66,17 +66,17 @@ class RendererVulkan : public VideoCore::RendererBase {
 public:
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                             PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr,
-                            VkPhysicalDevice gpu, VkSurfaceKHR vk_surface);
+                            VkPhysicalDevice gpu);
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                             Frontend::EmuWindow* secondary_window);
     ~RendererVulkan() override;
 
     [[nodiscard]] VideoCore::RasterizerInterface* Rasterizer() override {
-        return &rasterizer;
+        return rasterizer.get();
     }
 
     void NotifySurfaceChanged() override {
-        main_window.NotifySurfaceChanged();
+        main_window->NotifySurfaceChanged();
     }
 
     void SwapBuffers() override;
@@ -86,6 +86,7 @@ public:
     Instance* GetInstance() {
         return &instance;
     }
+    void CreateMainWindow(VkSurfaceKHR vk_surface);
 
 private:
     void ReloadPipeline();
@@ -121,9 +122,9 @@ private:
     Scheduler scheduler;
     RenderpassCache renderpass_cache;
     DescriptorPool pool;
-    PresentWindow main_window;
+    std::unique_ptr<PresentWindow> main_window;
     StreamBuffer vertex_buffer;
-    RasterizerVulkan rasterizer;
+    std::unique_ptr<RasterizerVulkan> rasterizer;
     std::unique_ptr<PresentWindow> second_window;
 
     vk::UniquePipelineLayout present_pipeline_layout;

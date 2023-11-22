@@ -53,14 +53,14 @@ constexpr static std::array<vk::DescriptorSetLayoutBinding, 1> PRESENT_BINDINGS 
 
 RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                                 PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr,
-                                VkPhysicalDevice gpu, VkSurfaceKHR vk_surface)
+                                VkPhysicalDevice gpu)
     : RendererBase{system, window, nullptr}, memory{system.Memory()},
       instance{system.TelemetrySession(), vkGetInstanceProcAddr, gpu},
       scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
-      main_window{window, instance, scheduler, vk_surface},
+      //main_window{window, instance, scheduler, vk_surface},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
                     VERTEX_BUFFER_SIZE},
-      rasterizer{memory,
+      /*rasterizer{memory,
                  system.CustomTexManager(),
                  *this,
                  render_window,
@@ -68,14 +68,35 @@ RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window
                  scheduler,
                  pool,
                  renderpass_cache,
-                 main_window.ImageCount()},
+                 main_window.ImageCount()},*/
       present_set_provider{instance, pool, PRESENT_BINDINGS} {
     LOG_INFO(Debug, "CompileShaders");
     CompileShaders();
     LOG_INFO(Debug, "BuildLayouts");
     BuildLayouts();
+    LOG_INFO(Debug, "RendererVulkan::RendererVulkan ctor end");
+}
+
+void RendererVulkan::CreateMainWindow(VkSurfaceKHR vk_surface)
+{
+    if (main_window) {
+        return;
+    }
+    main_window = std::make_unique<PresentWindow>(render_window, instance, scheduler, vk_surface);
+    rasterizer = std::make_unique<RasterizerVulkan>(
+        memory,
+        system.CustomTexManager(),
+        *this,
+        render_window,
+        instance,
+        scheduler,
+        pool,
+        renderpass_cache,
+        main_window->ImageCount()
+    );
     LOG_INFO(Debug, "BuildPipelines");
     BuildPipelines();
+    LOG_INFO(Debug, "CreateMainWindow end");
 }
 
 RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
@@ -83,10 +104,10 @@ RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window
     : RendererBase{system, window, secondary_window}, memory{system.Memory()},
       instance{system.TelemetrySession(), window, Settings::values.physical_device.GetValue()},
       scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
-      main_window{window, instance, scheduler},
+      //main_window{window, instance, scheduler},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
                     VERTEX_BUFFER_SIZE},
-      rasterizer{memory,
+      /*rasterizer{memory,
                  system.CustomTexManager(),
                  *this,
                  render_window,
@@ -94,7 +115,7 @@ RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window
                  scheduler,
                  pool,
                  renderpass_cache,
-                 main_window.ImageCount()},
+                 main_window.ImageCount()},*/
       present_set_provider{instance, pool, PRESENT_BINDINGS} {
     CompileShaders();
     BuildLayouts();
@@ -126,7 +147,7 @@ RendererVulkan::~RendererVulkan() {
 }
 
 void RendererVulkan::Sync() {
-    rasterizer.SyncEntireState();
+    rasterizer->SyncEntireState();
 }
 
 void RendererVulkan::PrepareRendertarget() {
@@ -175,7 +196,7 @@ void RendererVulkan::PrepareDraw(Frame* frame, const Layout::FramebufferLayout& 
     const auto descriptor_set = present_set_provider.Acquire(present_textures);
 
     renderpass_cache.EndRendering();
-    scheduler.Record([this, layout, frame, descriptor_set, renderpass = main_window.Renderpass(),
+    scheduler.Record([this, layout, frame, descriptor_set, renderpass = main_window->Renderpass(),
                       index = current_pipeline](vk::CommandBuffer cmdbuf) {
         const vk::Viewport viewport = {
             .x = 0.0f,
@@ -252,7 +273,7 @@ void RendererVulkan::LoadFBToScreenInfo(const GPU::Regs::FramebufferConfig& fram
     ASSERT(pixel_stride * bpp == framebuffer.stride);
     ASSERT(pixel_stride % 4 == 0);
 
-    if (!rasterizer.AccelerateDisplay(framebuffer, framebuffer_addr, static_cast<u32>(pixel_stride),
+    if (!rasterizer->AccelerateDisplay(framebuffer, framebuffer_addr, static_cast<u32>(pixel_stride),
                                       screen_info)) {
         // Reset the screen info's display texture to its own permanent texture
         screen_info.image_view = screen_info.texture.image_view;
@@ -421,7 +442,7 @@ void RendererVulkan::BuildPipelines() {
             .pColorBlendState = &color_blending,
             .pDynamicState = &dynamic_info,
             .layout = *present_pipeline_layout,
-            .renderPass = main_window.Renderpass(),
+            .renderPass = main_window->Renderpass(),
         };
 
         const auto [result, pipeline] =
@@ -871,7 +892,7 @@ void RendererVulkan::SwapBuffers() {
     const Layout::FramebufferLayout& layout = render_window.GetFramebufferLayout();
     PrepareRendertarget();
     RenderScreenshot();
-    RenderToWindow(main_window, layout, false);
+    RenderToWindow(*main_window, layout, false);
 #ifndef ANDROID
     if (Settings::values.layout_option.GetValue() == Settings::LayoutOption::SeparateWindows) {
         ASSERT(secondary_window);
@@ -883,7 +904,7 @@ void RendererVulkan::SwapBuffers() {
         secondary_window->PollEvents();
     }
 #endif
-    rasterizer.TickFrame();
+    rasterizer->TickFrame();
     EndFrame();
 }
 
@@ -925,7 +946,7 @@ void RendererVulkan::RenderScreenshot() {
     vk::Buffer staging_buffer{unsafe_buffer};
 
     Frame frame{};
-    main_window.RecreateFrame(&frame, width, height);
+    main_window->RecreateFrame(&frame, width, height);
 
     DrawScreens(&frame, layout, false);
 
