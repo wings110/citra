@@ -63,7 +63,6 @@ public:
     std::unique_ptr<EmuWindow_LibRetro> emu_window;
     bool hw_setup = false;
     struct retro_hw_render_callback hw_render {};
-    VkSurfaceKHR vk_surface;
 };
 
 CitraLibRetro* emu_instance;
@@ -560,20 +559,7 @@ void context_reset() {
     switch (Settings::values.graphics_api.GetValue()) {
     case Settings::GraphicsAPI::Vulkan:
     {
-        /*const struct retro_hw_render_interface_vulkan* vulkan = LibRetro::GetHWRenderInterfaceVulkan();
-        if (vulkan == nullptr) {
-            LOG_CRITICAL(Frontend, "Get Vulkan render interface failed");
-            return;
-        }
-        VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
-            Core::System::GetInstance(),
-            *emu_instance->emu_window,
-            vulkan->get_instance_proc_addr,
-            vulkan->gpu,
-            emu_instance->vk_surface
-        );
-        */
-        static_cast<Vulkan::RendererVulkan*>(VideoCore::g_renderer.get())->CreateMainWindow(emu_instance->vk_surface);
+        static_cast<Vulkan::RendererVulkan*>(VideoCore::g_renderer.get())->CreateMainWindow();
         break;
     }
     case Settings::GraphicsAPI::OpenGL:
@@ -635,7 +621,7 @@ static bool vk_create_device(
     unsigned num_required_device_layers,
     const VkPhysicalDeviceFeatures *required_features)
 {
-    emu_instance->vk_surface = surface;
+    emu_instance->emu_window->vkSurface = surface;
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(get_instance_proc_addr);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);

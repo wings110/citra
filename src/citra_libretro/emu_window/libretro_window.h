@@ -9,8 +9,8 @@
 #include <memory>
 #include <utility>
 #include "core/frontend/emu_window.h"
-
 #include "citra_libretro/input/mouse_tracker.h"
+#include "vulkan/vulkan_core.h"
 
 void ResetGLState();
 
@@ -50,6 +50,9 @@ public:
 
     /// Destroys a currently running OpenGL context.
     void DestroyContext();
+
+public:
+    VkSurfaceKHR vkSurface;
 
 private:
     /// Called when a configuration change affects the minimal size of the window

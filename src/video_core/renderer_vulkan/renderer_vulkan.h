@@ -86,7 +86,7 @@ public:
     Instance* GetInstance() {
         return &instance;
     }
-    void CreateMainWindow(VkSurfaceKHR vk_surface);
+    void CreateMainWindow();
 
 private:
     void ReloadPipeline();

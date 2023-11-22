@@ -25,11 +25,7 @@ using DebugCallback =
 std::shared_ptr<Common::DynamicLibrary> OpenLibrary(
     [[maybe_unused]] Frontend::GraphicsContext* context = nullptr);
 
-vk::SurfaceKHR CreateSurface(vk::Instance instance, const Frontend::EmuWindow& emu_window);
-
-vk::UniqueInstance CreateInstance(Frontend::WindowSystemType window_type,
-                                    VkInstance vk_instance,
-                                    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr);
+vk::SurfaceKHR CreateSurface(vk::Instance instance, Frontend::EmuWindow& emu_window);
 
 vk::UniqueInstance CreateInstance(const Common::DynamicLibrary& library,
                                   Frontend::WindowSystemType window_type, bool enable_validation,

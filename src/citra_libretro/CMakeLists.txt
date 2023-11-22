@@ -8,6 +8,8 @@ add_library(citra_libretro SHARED
         input/input_factory.h
         input/mouse_tracker.cpp
         input/mouse_tracker.h
+        vulkan/vk_swapchain.cpp
+        vulkan/vk_swapchain.h
         citra_libretro.cpp
         citra_libretro.h
         environment.cpp

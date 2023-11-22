@@ -8,6 +8,7 @@
 #include <queue>
 #include "common/polyfill_thread.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"
+#include "citra_libretro/vulkan/vk_swapchain.h"
 
 VK_DEFINE_HANDLE(VmaAllocation)
 
@@ -36,8 +37,6 @@ struct Frame {
 
 class PresentWindow final {
 public:
-    explicit PresentWindow(Frontend::EmuWindow& emu_window, const Instance& instance,
-                           Scheduler& scheduler, VkSurfaceKHR surface);
     explicit PresentWindow(Frontend::EmuWindow& emu_window, const Instance& instance,
                            Scheduler& scheduler);
     ~PresentWindow();
@@ -78,7 +77,7 @@ private:
     Scheduler& scheduler;
     vk::SurfaceKHR surface;
     vk::SurfaceKHR next_surface{};
-    Swapchain swapchain;
+    LibRetro::Vulkan::Swapchain swapchain;
     vk::CommandPool command_pool;
     vk::Queue graphics_queue;
     vk::RenderPass present_renderpass;

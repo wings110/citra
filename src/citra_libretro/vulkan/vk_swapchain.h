@@ -7,16 +7,14 @@
 #include <mutex>
 #include <vector>
 #include "common/common_types.h"
-#include "video_core/renderer_vulkan/vk_common.h"
+#include "video_core/renderer_vulkan/vk_instance.h"
 
+namespace LibRetro {
 namespace Vulkan {
-
-class Instance;
-class Scheduler;
 
 class Swapchain {
 public:
-    explicit Swapchain(const Instance& instance, u32 width, u32 height, vk::SurfaceKHR surface);
+    explicit Swapchain(const ::Vulkan::Instance& instance, u32 width, u32 height, vk::SurfaceKHR surface);
     ~Swapchain();
 
     /// Creates (or recreates) the swapchain with a given size.
@@ -38,10 +36,6 @@ public:
 
     vk::SurfaceFormatKHR GetSurfaceFormat() const {
         return surface_format;
-    }
-
-    vk::SwapchainKHR GetHandle() const {
-        return swapchain;
     }
 
     u32 GetWidth() const {
@@ -87,9 +81,10 @@ private:
     /// Creates the image acquired and present ready semaphores
     void RefreshSemaphores();
 
+    bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex);
+
 private:
-    const Instance& instance;
-    vk::SwapchainKHR swapchain{};
+    const ::Vulkan::Instance& instance;
     vk::SurfaceKHR surface{};
     vk::SurfaceFormatKHR surface_format;
     vk::PresentModeKHR present_mode;
@@ -108,3 +103,4 @@ private:
 };
 
 } // namespace Vulkan
+} // namespace LibRetro

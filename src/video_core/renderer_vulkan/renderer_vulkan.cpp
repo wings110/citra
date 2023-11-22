@@ -52,37 +52,23 @@ constexpr static std::array<vk::DescriptorSetLayoutBinding, 1> PRESENT_BINDINGS 
 }};
 
 RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
-                                VkInstance vk_instance,
-                                VkPhysicalDevice gpu)
+                                VkInstance vk_instance, VkPhysicalDevice gpu)
     : RendererBase{system, window, nullptr}, memory{system.Memory()},
       instance{system.TelemetrySession(), vk_instance, gpu},
       scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
-      //main_window{window, instance, scheduler, vk_surface},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
                     VERTEX_BUFFER_SIZE},
-      /*rasterizer{memory,
-                 system.CustomTexManager(),
-                 *this,
-                 render_window,
-                 instance,
-                 scheduler,
-                 pool,
-                 renderpass_cache,
-                 main_window.ImageCount()},*/
-      present_set_provider{instance, pool, PRESENT_BINDINGS} {
-    LOG_INFO(Debug, "CompileShaders");
+      present_set_provider{instance, pool, PRESENT_BINDINGS}
+{
     CompileShaders();
-    LOG_INFO(Debug, "BuildLayouts");
     BuildLayouts();
-    LOG_INFO(Debug, "RendererVulkan::RendererVulkan ctor end");
 }
 
-void RendererVulkan::CreateMainWindow(VkSurfaceKHR vk_surface)
-{
+void RendererVulkan::CreateMainWindow() {
     if (main_window) {
         return;
     }
-    main_window = std::make_unique<PresentWindow>(render_window, instance, scheduler, vk_surface);
+    main_window = std::make_unique<PresentWindow>(render_window, instance, scheduler);
     rasterizer = std::make_unique<RasterizerVulkan>(
         memory,
         system.CustomTexManager(),
@@ -94,9 +80,7 @@ void RendererVulkan::CreateMainWindow(VkSurfaceKHR vk_surface)
         renderpass_cache,
         main_window->ImageCount()
     );
-    LOG_INFO(Debug, "BuildPipelines");
     BuildPipelines();
-    LOG_INFO(Debug, "CreateMainWindow end");
 }
 
 RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
@@ -117,6 +101,7 @@ RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window
                  renderpass_cache,
                  main_window.ImageCount()},*/
       present_set_provider{instance, pool, PRESENT_BINDINGS} {
+    CreateMainWindow();
     CompileShaders();
     BuildLayouts();
     BuildPipelines();

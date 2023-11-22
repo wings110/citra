@@ -59,7 +59,7 @@ public:
 
     /// Returns the Vulkan instance
     vk::Instance GetInstance() const {
-        return vk_instance ? static_cast<vk::Instance>(vk_instance) : *instance;
+        return *instance;
     }
 
     /// Returns the current physical device
@@ -279,7 +279,6 @@ private:
     bool SetMoltenVkConfig();
 
 private:
-    VkInstance vk_instance = nullptr;
     std::shared_ptr<Common::DynamicLibrary> library;
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;

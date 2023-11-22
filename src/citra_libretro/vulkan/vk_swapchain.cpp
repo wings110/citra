@@ -7,24 +7,56 @@
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/settings.h"
-#include "video_core/renderer_vulkan/vk_instance.h"
-#include "video_core/renderer_vulkan/vk_swapchain.h"
+#include "citra_libretro/vulkan/vk_swapchain.h"
+#include "citra_libretro/environment.h"
 
-MICROPROFILE_DEFINE(Vulkan_Acquire, "Vulkan", "Swapchain Acquire", MP_RGB(185, 66, 245));
-MICROPROFILE_DEFINE(Vulkan_Present, "Vulkan", "Swapchain Present", MP_RGB(66, 185, 245));
-
+namespace LibRetro {
 namespace Vulkan {
 
-Swapchain::Swapchain(const Instance& instance_, u32 width, u32 height, vk::SurfaceKHR surface_)
+static const retro_hw_render_interface_vulkan* vulkan;
+
+#define VULKAN_MAX_SWAPCHAIN_IMAGES 8
+struct VkSwapchainKHR_T
+{
+  uint32_t count;
+  struct
+  {
+    VkImage handle;
+    VkDeviceMemory memory;
+    retro_vulkan_image retro_image;
+  } images[VULKAN_MAX_SWAPCHAIN_IMAGES];
+  std::mutex mutex;
+  std::condition_variable condVar;
+  int current_index;
+};
+static VkSwapchainKHR_T chain;
+
+Swapchain::Swapchain(const ::Vulkan::Instance& instance_, u32 width, u32 height, vk::SurfaceKHR surface_)
     : instance{instance_}, surface{surface_} {
+    vulkan = LibRetro::GetHWRenderInterfaceVulkan();
     FindPresentFormat();
-    SetPresentMode();
     Create(width, height, surface);
 }
 
 Swapchain::~Swapchain() {
     Destroy();
-    instance.GetInstance().destroySurfaceKHR(surface);
+}
+
+bool Swapchain::MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t* typeIndex) {
+  VkPhysicalDeviceMemoryProperties memory_properties = instance.GetPhysicalDevice().getMemoryProperties();
+  // Search memtypes to find first index with those properties
+  for (uint32_t i = 0; i < 32; i++) {
+    if ((typeBits & 1) == 1) {
+      // Type is available, does it match user properties?
+      if ((memory_properties.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask) {
+        *typeIndex = i;
+        return true;
+      }
+    }
+    typeBits >>= 1;
+  }
+  // No memory types matched, return failure
+  return false;
 }
 
 void Swapchain::Create(u32 width_, u32 height_, vk::SurfaceKHR surface_) {
@@ -66,63 +98,98 @@ void Swapchain::Create(u32 width_, u32 height_, vk::SurfaceKHR surface_) {
         .oldSwapchain = nullptr,
     };
 
-    try {
-        swapchain = instance.GetDevice().createSwapchainKHR(swapchain_info);
-    } catch (vk::SystemError& err) {
-        LOG_CRITICAL(Render_Vulkan, "{}", err.what());
-        UNREACHABLE();
+    uint32_t swapchain_mask = vulkan->get_sync_index_mask(vulkan->handle);
+
+    chain.count = 0;
+    while (swapchain_mask) {
+        chain.count++;
+        swapchain_mask >>= 1;
     }
+    assert(chain.count <= VULKAN_MAX_SWAPCHAIN_IMAGES);
+
+    for (uint32_t i = 0; i < chain.count; i++) {
+        {
+            vk::ImageCreateInfo info{
+                .flags = vk::ImageCreateFlagBits::eMutableFormat,
+                .imageType = vk::ImageType::e2D,
+                .format = swapchain_info.imageFormat,
+                .extent = {
+                    .width = swapchain_info.imageExtent.width,
+                    .height = swapchain_info.imageExtent.height,
+                    .depth = 1,
+                },
+                .mipLevels = 1,
+                .arrayLayers = 1,
+                .samples = vk::SampleCountFlagBits::e1,
+                .tiling = vk::ImageTiling::eOptimal,
+                .usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst |
+                        vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment,
+
+                .initialLayout = vk::ImageLayout::eUndefined,
+            };
+
+            chain.images[i].handle = instance.GetDevice().createImage(info);
+        }
+
+        vk::MemoryRequirements memreq = instance.GetDevice().getImageMemoryRequirements(chain.images[i].handle);
+
+        vk::MemoryAllocateInfo alloc{
+            .allocationSize = memreq.size
+        };
+/*
+        VkMemoryDedicatedAllocateInfoKHR dedicated{
+            VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR};
+        if (DEDICATED_ALLOCATION)
+        {
+            alloc.pNext = &dedicated;
+            dedicated.image = chain.images[i].handle;
+        }
+*/
+        MemoryTypeFromProperties(memreq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                &alloc.memoryTypeIndex);
+        chain.images[i].memory = instance.GetDevice().allocateMemory(alloc);
+        instance.GetDevice().bindImageMemory(chain.images[i].handle, chain.images[i].memory, 0);
+
+        chain.images[i].retro_image.create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        chain.images[i].retro_image.create_info.image = chain.images[i].handle;
+        chain.images[i].retro_image.create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        chain.images[i].retro_image.create_info.format = static_cast<VkFormat>(swapchain_info.imageFormat);
+        chain.images[i].retro_image.create_info.components = {
+            VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,
+            VK_COMPONENT_SWIZZLE_A};
+        chain.images[i].retro_image.create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        chain.images[i].retro_image.create_info.subresourceRange.layerCount = 1;
+        chain.images[i].retro_image.create_info.subresourceRange.levelCount = 1;
+
+        vk::Result res = instance.GetDevice().createImageView(reinterpret_cast<const vk::ImageViewCreateInfo *>(&chain.images[i].retro_image.create_info), nullptr,
+                            reinterpret_cast<vk::ImageView *>(&chain.images[i].retro_image.image_view));
+        if (res != vk::Result::eSuccess) {
+            LOG_CRITICAL(Render_Vulkan, "Unable to create image view - {}", res);
+        }
+
+        chain.images[i].retro_image.image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    chain.current_index = -1;
 
     SetupImages();
     RefreshSemaphores();
 }
 
 bool Swapchain::AcquireNextImage() {
-    MICROPROFILE_SCOPE(Vulkan_Acquire);
-    vk::Device device = instance.GetDevice();
-    vk::Result result =
-        device.acquireNextImageKHR(swapchain, std::numeric_limits<u64>::max(),
-                                   image_acquired[frame_index], VK_NULL_HANDLE, &image_index);
-
-    switch (result) {
-    case vk::Result::eSuccess:
-        break;
-    case vk::Result::eSuboptimalKHR:
-    case vk::Result::eErrorSurfaceLostKHR:
-    case vk::Result::eErrorOutOfDateKHR:
-        needs_recreation = true;
-        break;
-    default:
-        LOG_CRITICAL(Render_Vulkan, "Swapchain acquire returned unknown result {}", result);
-        UNREACHABLE();
-        break;
-    }
-
-    return !needs_recreation;
+    vulkan->wait_sync_index(vulkan->handle);
+    image_index = vulkan->get_sync_index(vulkan->handle);
+    return true;
 }
 
 void Swapchain::Present() {
-    if (needs_recreation) {
-        return;
-    }
+    std::unique_lock<std::mutex> lock(chain.mutex);
+    chain.current_index = image_index;
 
-    const vk::PresentInfoKHR present_info = {
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &present_ready[image_index],
-        .swapchainCount = 1,
-        .pSwapchains = &swapchain,
-        .pImageIndices = &image_index,
-    };
+    vulkan->set_image(vulkan->handle, &chain.images[image_index].retro_image,
+                    0, nullptr, vulkan->queue_index);
 
-    MICROPROFILE_SCOPE(Vulkan_Present);
-    try {
-        [[maybe_unused]] vk::Result result = instance.GetPresentQueue().presentKHR(present_info);
-    } catch (vk::OutOfDateKHRError&) {
-        needs_recreation = true;
-    } catch (const vk::SystemError& err) {
-        LOG_CRITICAL(Render_Vulkan, "Swapchain presentation failed {}", err.what());
-        UNREACHABLE();
-    }
+    chain.condVar.notify_all();
 
     frame_index = (frame_index + 1) % image_count;
 }
@@ -225,9 +292,6 @@ void Swapchain::SetSurfaceProperties() {
 
 void Swapchain::Destroy() {
     vk::Device device = instance.GetDevice();
-    if (swapchain) {
-        device.destroySwapchainKHR(swapchain);
-    }
     for (u32 i = 0; i < image_count; i++) {
         device.destroySemaphore(image_acquired[i]);
         device.destroySemaphore(present_ready[i]);
@@ -250,9 +314,13 @@ void Swapchain::RefreshSemaphores() {
 }
 
 void Swapchain::SetupImages() {
-    vk::Device device = instance.GetDevice();
-    images = device.getSwapchainImagesKHR(swapchain);
+    images.clear();
+    images.resize(chain.count);
+    for (uint32_t i = 0; i < chain.count; ++i) {
+        images[i] = chain.images[i].handle;
+    }
     image_count = static_cast<u32>(images.size());
 }
 
 } // namespace Vulkan
+} // namespace LibRetro

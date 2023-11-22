@@ -136,7 +136,7 @@ std::string GetReadableVersion(u32 version) {
 } // Anonymous namespace
 
 Instance::Instance(Core::TelemetrySession& telemetry, VkInstance vk_instance_, VkPhysicalDevice gpu)
-    : vk_instance{vk_instance_}, physical_device{gpu},
+    : instance{vk_instance_}, physical_device{gpu},
       properties{physical_device.getProperties()},
       available_extensions{GetSupportedExtensions(physical_device)}
 {
@@ -635,7 +635,7 @@ void Instance::CreateAllocator() {
         .physicalDevice = physical_device,
         .device = *device,
         .pVulkanFunctions = &functions,
-        .instance = GetInstance(),
+        .instance = *instance,
         .vulkanApiVersion = vk::enumerateInstanceVersion(),
     };
 

@@ -24,6 +24,8 @@
 #include "core/frontend/emu_window.h"
 #include "video_core/renderer_vulkan/vk_platform.h"
 
+#include "citra_libretro/emu_window/libretro_window.h"
+
 namespace Vulkan {
 
 namespace {
@@ -124,9 +126,13 @@ std::shared_ptr<Common::DynamicLibrary> OpenLibrary(
     return library;
 }
 
-vk::SurfaceKHR CreateSurface(vk::Instance instance, const Frontend::EmuWindow& emu_window) {
+vk::SurfaceKHR CreateSurface(vk::Instance instance, Frontend::EmuWindow& emu_window) {
     const auto& window_info = emu_window.GetWindowInfo();
     vk::SurfaceKHR surface{};
+
+    if (window_info.type == Frontend::WindowSystemType::LibRetro) {
+        return static_cast<EmuWindow_LibRetro *>(&emu_window)->vkSurface;
+    }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     if (window_info.type == Frontend::WindowSystemType::Windows) {
@@ -272,52 +278,6 @@ vk::InstanceCreateFlags GetInstanceFlags() {
 #else
     return static_cast<vk::InstanceCreateFlags>(0);
 #endif
-}
-
-vk::UniqueInstance CreateInstance(Frontend::WindowSystemType window_type,
-                                    VkInstance vk_instance,
-                                    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr) {
-
-    if (!vkGetInstanceProcAddr) {
-        throw std::runtime_error("Failed GetSymbol vkGetInstanceProcAddr");
-    }
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-
-    if (!VULKAN_HPP_DEFAULT_DISPATCHER.vkEnumerateInstanceVersion) {
-        throw std::runtime_error("Vulkan 1.0 is not supported, 1.1 is required!");
-    }
-
-    const u32 available_version = vk::enumerateInstanceVersion();
-    if (available_version < VK_API_VERSION_1_1) {
-        throw std::runtime_error("Vulkan 1.0 is not supported, 1.1 is required!");
-    }
-
-    const auto extensions = GetInstanceExtensions(window_type, false);
-
-    const vk::ApplicationInfo application_info = {
-        .pApplicationName = "Citra",
-        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-        .pEngineName = "Citra Vulkan",
-        .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-        .apiVersion = available_version,
-    };
-
-    boost::container::static_vector<const char*, 2> layers;
-
-    const vk::InstanceCreateInfo instance_ci = {
-        .flags = GetInstanceFlags(),
-        .pApplicationInfo = &application_info,
-        .enabledLayerCount = static_cast<u32>(layers.size()),
-        .ppEnabledLayerNames = layers.data(),
-        .enabledExtensionCount = static_cast<u32>(extensions.size()),
-        .ppEnabledExtensionNames = extensions.data(),
-    };
-
-    auto instance = vk::createInstanceUnique(instance_ci);
-
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
-
-    return instance;
 }
 
 vk::UniqueInstance CreateInstance(const Common::DynamicLibrary& library,
