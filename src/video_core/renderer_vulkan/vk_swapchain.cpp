@@ -394,7 +394,7 @@ void Swapchain::SetupImages() {
     images.clear();
     images.resize(chain.count);
     for (uint32_t i = 0; i < chain.count; ++i) {
-        images.push_back(chain.images[i].handle);
+        images[i] = chain.images[i].handle;
     }
 #else
     vk::Device device = instance.GetDevice();
