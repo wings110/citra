@@ -65,7 +65,7 @@ class RendererVulkan : public VideoCore::RendererBase {
 
 public:
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
-                            PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr,
+                            VkInstance instance,
                             VkPhysicalDevice gpu);
     explicit RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
                             Frontend::EmuWindow* secondary_window);

@@ -231,6 +231,7 @@ bool Swapchain::AcquireNextImage() {
 
 void Swapchain::Present() {
 #ifdef HAVE_LIBRETRO
+    LOG_INFO(Debug, "Swapchain::Present");
     std::unique_lock<std::mutex> lock(chain.mutex);
     chain.current_index = image_index;
 

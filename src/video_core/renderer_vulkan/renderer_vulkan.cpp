@@ -52,10 +52,10 @@ constexpr static std::array<vk::DescriptorSetLayoutBinding, 1> PRESENT_BINDINGS 
 }};
 
 RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window,
-                                PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr,
+                                VkInstance vk_instance,
                                 VkPhysicalDevice gpu)
     : RendererBase{system, window, nullptr}, memory{system.Memory()},
-      instance{system.TelemetrySession(), vkGetInstanceProcAddr, gpu},
+      instance{system.TelemetrySession(), vk_instance, gpu},
       scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
       //main_window{window, instance, scheduler, vk_surface},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,

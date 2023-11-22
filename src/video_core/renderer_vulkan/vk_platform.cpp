@@ -213,7 +213,6 @@ std::vector<const char*> GetInstanceExtensions(Frontend::WindowSystemType window
 #endif
 
     switch (window_type) {
-    case Frontend::WindowSystemType::LibRetro:
     case Frontend::WindowSystemType::Headless:
         break;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -276,7 +275,8 @@ vk::InstanceCreateFlags GetInstanceFlags() {
 }
 
 vk::UniqueInstance CreateInstance(Frontend::WindowSystemType window_type,
-                                  PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr) {
+                                    VkInstance vk_instance,
+                                    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr) {
 
     if (!vkGetInstanceProcAddr) {
         throw std::runtime_error("Failed GetSymbol vkGetInstanceProcAddr");

@@ -40,7 +40,7 @@ struct FormatTraits {
 
 class Instance {
 public:
-    explicit Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkPhysicalDevice gpu);
+    explicit Instance(Core::TelemetrySession& telemetry, VkInstance vk_instance, VkPhysicalDevice gpu);
     explicit Instance(bool validation = false, bool dump_command_buffers = false);
     explicit Instance(Core::TelemetrySession& telemetry, Frontend::EmuWindow& window,
                       u32 physical_device_index);
@@ -59,7 +59,7 @@ public:
 
     /// Returns the Vulkan instance
     vk::Instance GetInstance() const {
-        return *instance;
+        return vk_instance ? static_cast<vk::Instance>(vk_instance) : *instance;
     }
 
     /// Returns the current physical device
@@ -279,6 +279,7 @@ private:
     bool SetMoltenVkConfig();
 
 private:
+    VkInstance vk_instance = nullptr;
     std::shared_ptr<Common::DynamicLibrary> library;
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;

@@ -405,15 +405,15 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
     while (!swapchain.AcquireNextImage()) {
         recreate_swapchain();
     }
-
+    LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 1");
     const vk::Image swapchain_image = swapchain.Image();
-
+    LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 2");
     const vk::CommandBufferBeginInfo begin_info = {
         .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
     };
     const vk::CommandBuffer cmdbuf = frame->cmdbuf;
     cmdbuf.begin(begin_info);
-
+    LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 3");
     const vk::Extent2D extent = swapchain.GetExtent();
     const std::array pre_barriers{
         vk::ImageMemoryBarrier{
@@ -465,11 +465,11 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
             .layerCount = VK_REMAINING_ARRAY_LAYERS,
         },
     };
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 4");
     cmdbuf.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
                            vk::PipelineStageFlagBits::eTransfer, vk::DependencyFlagBits::eByRegion,
                            {}, {}, pre_barriers);
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 5");
     if (blit_supported) {
         cmdbuf.blitImage(frame->image, vk::ImageLayout::eTransferSrcOptimal, swapchain_image,
                          vk::ImageLayout::eTransferDstOptimal,
@@ -480,22 +480,22 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
                          vk::ImageLayout::eTransferDstOptimal,
                          MakeImageCopy(frame->width, frame->height, extent.width, extent.height));
     }
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 6");
     cmdbuf.pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,
                            vk::PipelineStageFlagBits::eAllCommands,
                            vk::DependencyFlagBits::eByRegion, {}, {}, post_barrier);
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 7");
     cmdbuf.end();
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 8");
     static constexpr std::array<vk::PipelineStageFlags, 2> wait_stage_masks = {
         vk::PipelineStageFlagBits::eColorAttachmentOutput,
         vk::PipelineStageFlagBits::eAllGraphics,
     };
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 9");
     const vk::Semaphore present_ready = swapchain.GetPresentReadySemaphore();
     const vk::Semaphore image_acquired = swapchain.GetImageAcquiredSemaphore();
     const std::array wait_semaphores = {image_acquired, frame->render_ready};
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 10");
     vk::SubmitInfo submit_info = {
         .waitSemaphoreCount = static_cast<u32>(wait_semaphores.size()),
         .pWaitSemaphores = wait_semaphores.data(),
@@ -505,19 +505,20 @@ void PresentWindow::CopyToSwapchain(Frame* frame) {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = &present_ready,
     };
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 11");
     std::scoped_lock submit_lock{scheduler.submit_mutex};
-
+LOG_INFO(Debug, "PresentWindow::CopyToSwapchain 12");
     try {
         graphics_queue.submit(submit_info, frame->present_done);
     } catch (vk::DeviceLostError& err) {
         LOG_CRITICAL(Render_Vulkan, "Device lost during present submit: {}", err.what());
         UNREACHABLE();
     }
-
+    LOG_INFO(Debug, "swapchain.Present");
     swapchain.Present();
-
+    LOG_INFO(Debug, "emu_window.SwapBuffers");
     emu_window.SwapBuffers();
+    LOG_INFO(Debug, "DONE");
 }
 
 vk::RenderPass PresentWindow::CreateRenderpass() {

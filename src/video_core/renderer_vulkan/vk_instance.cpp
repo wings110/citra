@@ -135,15 +135,15 @@ std::string GetReadableVersion(u32 version) {
 
 } // Anonymous namespace
 
-Instance::Instance(Core::TelemetrySession& telemetry, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkPhysicalDevice gpu)
-    : instance{CreateInstance(Frontend::WindowSystemType::LibRetro, vkGetInstanceProcAddr)}
+Instance::Instance(Core::TelemetrySession& telemetry, VkInstance vk_instance_, VkPhysicalDevice gpu)
+    : vk_instance{vk_instance_}, physical_device{gpu},
+      properties{physical_device.getProperties()},
+      available_extensions{GetSupportedExtensions(physical_device)}
 {
-    physical_device = gpu;
-    available_extensions = GetSupportedExtensions(physical_device);
-    properties = physical_device.getProperties();
-
     CollectTelemetryParameters(telemetry);
+    LOG_INFO(Debug, "CreateDevice");
     CreateDevice();
+    LOG_INFO(Debug, "CollectToolingInfo");
     CollectToolingInfo();
     LOG_INFO(Debug, "CreateFormatTable");
     CreateFormatTable();
@@ -626,20 +626,26 @@ bool Instance::CreateDevice() {
 }
 
 void Instance::CreateAllocator() {
+LOG_INFO(Debug, "CreateAllocator 1 vkGetInstanceProcAddr = {} vkGetDeviceProcAddr = {}",
+    (void*)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
+    (void*)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr
+);
     const VmaVulkanFunctions functions = {
         .vkGetInstanceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
         .vkGetDeviceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr,
     };
-
+LOG_INFO(Debug, "CreateAllocator 2 vkInstance = %p vkVersion = %d", (void*)vk_instance, vk::enumerateInstanceVersion());
     const VmaAllocatorCreateInfo allocator_info = {
         .physicalDevice = physical_device,
         .device = *device,
         .pVulkanFunctions = &functions,
-        .instance = *instance,
+        .instance = GetInstance(),
         .vulkanApiVersion = vk::enumerateInstanceVersion(),
     };
-
+LOG_INFO(Debug, "CreateAllocator 3");
+LOG_INFO(Debug, "vmaCreateAllocator = %p", (void*)vmaCreateAllocator);
     const VkResult result = vmaCreateAllocator(&allocator_info, &allocator);
+LOG_INFO(Debug, "result = {}", result);
     if (result != VK_SUCCESS) {
         UNREACHABLE_MSG("Failed to initialize VMA with error {}", result);
     }

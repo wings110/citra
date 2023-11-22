@@ -64,7 +64,6 @@ public:
     bool hw_setup = false;
     struct retro_hw_render_callback hw_render {};
     VkSurfaceKHR vk_surface;
-    Vulkan::Instance* vk_instance;
 };
 
 CitraLibRetro* emu_instance;
@@ -638,12 +637,13 @@ static bool vk_create_device(
     const VkPhysicalDeviceFeatures *required_features)
 {
     emu_instance->vk_surface = surface;
-    //emu_instance->vk_instance = new Vulkan::Instance(Core::System::GetInstance().TelemetrySession(), get_instance_proc_addr, gpu);
+
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance, get_instance_proc_addr);
 
     VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
         Core::System::GetInstance(),
         *emu_instance->emu_window,
-        get_instance_proc_addr, gpu
+        instance, gpu
     );
 
     Vulkan::Instance* vkInstance = static_cast<Vulkan::RendererVulkan*>(VideoCore::g_renderer.get())->GetInstance();
