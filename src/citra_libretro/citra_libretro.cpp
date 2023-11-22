@@ -609,7 +609,6 @@ void context_reset() {
 
     emu_instance->emu_window->UpdateLayout();
     emu_instance->emu_window->CreateContext();
-    LOG_INFO(Debug, "context_reset end");
 }
 
 void context_destroy() {
@@ -638,7 +637,8 @@ static bool vk_create_device(
 {
     emu_instance->vk_surface = surface;
 
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance, get_instance_proc_addr);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(get_instance_proc_addr);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
     VideoCore::g_renderer = std::make_unique<Vulkan::RendererVulkan>(
         Core::System::GetInstance(),

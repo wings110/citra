@@ -626,15 +626,11 @@ bool Instance::CreateDevice() {
 }
 
 void Instance::CreateAllocator() {
-LOG_INFO(Debug, "CreateAllocator 1 vkGetInstanceProcAddr = {} vkGetDeviceProcAddr = {}",
-    (void*)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
-    (void*)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr
-);
     const VmaVulkanFunctions functions = {
         .vkGetInstanceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
         .vkGetDeviceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr,
     };
-LOG_INFO(Debug, "CreateAllocator 2 vkInstance = %p vkVersion = %d", (void*)vk_instance, vk::enumerateInstanceVersion());
+
     const VmaAllocatorCreateInfo allocator_info = {
         .physicalDevice = physical_device,
         .device = *device,
@@ -642,10 +638,8 @@ LOG_INFO(Debug, "CreateAllocator 2 vkInstance = %p vkVersion = %d", (void*)vk_in
         .instance = GetInstance(),
         .vulkanApiVersion = vk::enumerateInstanceVersion(),
     };
-LOG_INFO(Debug, "CreateAllocator 3");
-LOG_INFO(Debug, "vmaCreateAllocator = %p", (void*)vmaCreateAllocator);
+
     const VkResult result = vmaCreateAllocator(&allocator_info, &allocator);
-LOG_INFO(Debug, "result = {}", result);
     if (result != VK_SUCCESS) {
         UNREACHABLE_MSG("Failed to initialize VMA with error {}", result);
     }
