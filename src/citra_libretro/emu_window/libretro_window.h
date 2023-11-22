@@ -16,7 +16,7 @@ void ResetGLState();
 
 class EmuWindow_LibRetro : public Frontend::EmuWindow {
 public:
-    EmuWindow_LibRetro();
+    EmuWindow_LibRetro(bool useOpenGL);
     ~EmuWindow_LibRetro();
 
     /// Swap buffers to display the next frame
@@ -69,7 +69,9 @@ private:
     // For tracking mouse cursor
     std::unique_ptr<LibRetro::Input::MouseTracker> tracker = nullptr;
 
-    bool enableEmulatedPointer = true;
+    bool enableEmulatedPointer = false;
 
     bool firstInit = true;
+
+    bool useOpenGL = false;
 };

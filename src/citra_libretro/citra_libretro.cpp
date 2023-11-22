@@ -463,6 +463,12 @@ void UpdateSettings() {
         }
     }
 
+    if(!emu_instance->emu_window) {
+        emu_instance->emu_window = std::make_unique<EmuWindow_LibRetro>(
+            Settings::values.graphics_api.GetValue() == Settings::GraphicsAPI::OpenGL
+        );
+    }
+
     // Update the framebuffer sizing.
     emu_instance->emu_window->UpdateLayout();
 
@@ -660,10 +666,6 @@ static void vk_destroy_device() {
  */
 bool retro_load_game(const struct retro_game_info* info) {
     LOG_INFO(Frontend, "Starting Citra RetroArch game...");
-
-    if(!emu_instance->hw_setup) {
-        emu_instance->emu_window = std::make_unique<EmuWindow_LibRetro>();
-    }
 
     UpdateSettings();
 

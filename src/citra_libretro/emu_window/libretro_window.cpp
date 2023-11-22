@@ -51,7 +51,8 @@ void ResetGLState() {
     glActiveTexture(GL_TEXTURE0);
 }
 
-EmuWindow_LibRetro::EmuWindow_LibRetro() {
+EmuWindow_LibRetro::EmuWindow_LibRetro(bool useOpenGL_) {
+    useOpenGL = useOpenGL_;
     strict_context_required = true;
     //window_info.type = Frontend::WindowSystemType::LibRetro;
     //window_info.render_surface = nullptr;
@@ -62,20 +63,21 @@ EmuWindow_LibRetro::~EmuWindow_LibRetro() {}
 void EmuWindow_LibRetro::SwapBuffers() {
     submittedFrame = true;
 
-    auto current_state = OpenGL::OpenGLState::GetCurState();
-
-    ResetGLState();
-
-    if (enableEmulatedPointer) {
-        tracker->Render(width, height);
-    }
-
-    LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+    if (useOpenGL) {
+        auto current_state = OpenGL::OpenGLState::GetCurState();
+        ResetGLState();
+        if (enableEmulatedPointer) {
+            tracker->Render(width, height);
+        }
+        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
                                static_cast<unsigned>(height), 0);
-
-    ResetGLState();
-
-    current_state.Apply();
+        ResetGLState();
+        current_state.Apply();
+    } else {
+        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID,
+                                static_cast<unsigned>(width),
+                                static_cast<unsigned>(height), 0);
+    }
 }
 
 void EmuWindow_LibRetro::SetupFramebuffer() {
@@ -135,7 +137,7 @@ void EmuWindow_LibRetro::UpdateLayout() {
 
     bool swapped = Settings::values.swap_screen.GetValue();
 
-    enableEmulatedPointer = true;
+    enableEmulatedPointer = useOpenGL;
 
     switch (Settings::values.layout_option.GetValue()) {
     case Settings::LayoutOption::SingleScreen:
@@ -226,7 +228,9 @@ bool EmuWindow_LibRetro::HasSubmittedFrame() {
 }
 
 void EmuWindow_LibRetro::CreateContext() {
-    tracker = std::make_unique<LibRetro::Input::MouseTracker>();
+    if (useOpenGL) {
+        tracker = std::make_unique<LibRetro::Input::MouseTracker>();
+    }
 
     doCleanFrame = true;
 }
