@@ -255,7 +255,7 @@ public:
     /**
      * Requests for a frontend to setup a framebuffer.
      */
-    void SetupFramebuffer() {}
+    virtual void SetupFramebuffer() {}
 
     /// Flags that the Emulation Window is not ready to support a hardware context yet.
     virtual bool ShouldDeferRendererInit() {
