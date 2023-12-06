@@ -104,7 +104,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
     Signal signal{Signal::None};
     u32 param{};
     {
-        std::lock_guard lock{signal_mutex};
+        std::scoped_lock lock{signal_mutex};
         if (current_signal != Signal::None) {
             signal = current_signal;
             param = signal_param;
@@ -158,7 +158,8 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
     for (auto& cpu_core : cpu_cores) {
         if (cpu_core->GetTimer().GetTicks() < global_ticks) {
             s64 delay = global_ticks - cpu_core->GetTimer().GetTicks();
-            kernel->SetRunningCPU(cpu_core.get());
+            running_core = cpu_core.get();
+            kernel->SetRunningCPU(running_core);
             cpu_core->GetTimer().Advance();
             cpu_core->PrepareReschedule();
             kernel->GetThreadManager(cpu_core->GetID()).Reschedule();
@@ -199,7 +200,8 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         // TODO: Make special check for idle since we can easily revert the time of idle cores
         s64 max_slice = Timing::MAX_SLICE_LENGTH;
         for (const auto& cpu_core : cpu_cores) {
-            kernel->SetRunningCPU(cpu_core.get());
+            running_core = cpu_core.get();
+            kernel->SetRunningCPU(running_core);
             cpu_core->GetTimer().Advance();
             cpu_core->PrepareReschedule();
             kernel->GetThreadManager(cpu_core->GetID()).Reschedule();
@@ -240,7 +242,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
 }
 
 bool System::SendSignal(System::Signal signal, u32 param) {
-    std::lock_guard lock{signal_mutex};
+    std::scoped_lock lock{signal_mutex};
     if (current_signal != signal && current_signal != Signal::None) {
         LOG_ERROR(Core, "Unable to {} as {} is ongoing", signal, current_signal);
         return false;
@@ -352,6 +354,10 @@ PerfStats::Results System::GetAndResetPerfStats() {
                                   : PerfStats::Results{};
 }
 
+PerfStats::Results System::GetLastPerfStats() {
+    return perf_stats ? perf_stats->GetLastStats() : PerfStats::Results{};
+}
+
 void System::Reschedule() {
     if (!reschedule_pending) {
         return;
@@ -384,7 +390,7 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window,
 #if CITRA_ARCH(x86_64) || CITRA_ARCH(arm64)
         for (u32 i = 0; i < num_cores; ++i) {
             cpu_cores.push_back(std::make_shared<ARM_Dynarmic>(
-                this, *memory, i, timing->GetTimer(i), *exclusive_monitor));
+                *this, *memory, i, timing->GetTimer(i), *exclusive_monitor));
         }
 #else
         for (u32 i = 0; i < num_cores; ++i) {
@@ -396,7 +402,7 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window,
     } else {
         for (u32 i = 0; i < num_cores; ++i) {
             cpu_cores.push_back(
-                std::make_shared<ARM_DynCom>(this, *memory, USER32MODE, i, timing->GetTimer(i)));
+                std::make_shared<ARM_DynCom>(*this, *memory, USER32MODE, i, timing->GetTimer(i)));
         }
     }
     running_core = cpu_cores[0].get();
@@ -406,10 +412,10 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window,
 
     const auto audio_emulation = Settings::values.audio_emulation.GetValue();
     if (audio_emulation == Settings::AudioEmulation::HLE) {
-        dsp_core = std::make_unique<AudioCore::DspHle>(*memory, *timing);
+        dsp_core = std::make_unique<AudioCore::DspHle>(*this);
     } else {
         const bool multithread = audio_emulation == Settings::AudioEmulation::LLEMultithreaded;
-        dsp_core = std::make_unique<AudioCore::DspLle>(*memory, *timing, multithread);
+        dsp_core = std::make_unique<AudioCore::DspLle>(*this, multithread);
     }
 
     memory->SetDSP(*dsp_core);

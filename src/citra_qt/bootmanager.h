@@ -8,7 +8,6 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <QOpenGLWidget>
 #include <QThread>
 #include <QWidget>
 #include "core/core.h"
@@ -126,8 +125,6 @@ public:
     void DoneCurrent() override;
     void PollEvents() override;
     std::unique_ptr<Frontend::GraphicsContext> CreateSharedContext() const override;
-
-    void paintGL() override;
 
     void BackupGeometry();
     void RestoreGeometry();

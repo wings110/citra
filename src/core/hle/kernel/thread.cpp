@@ -4,24 +4,19 @@
 
 #include <algorithm>
 #include <climits>
-#include <list>
-#include <vector>
 #include <boost/serialization/string.hpp>
 #include "common/archives.h"
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "common/math_util.h"
 #include "common/serialization/boost_flat_set.h"
 #include "core/arm/arm_interface.h"
 #include "core/arm/skyeye_common/armstate.h"
-#include "core/core.h"
 #include "core/hle/kernel/errors.h"
-#include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/mutex.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/result.h"
 #include "core/memory.h"
@@ -33,7 +28,7 @@ namespace Kernel {
 template <class Archive>
 void Thread::serialize(Archive& ar, const unsigned int file_version) {
     ar& boost::serialization::base_object<WaitObject>(*this);
-    ar&* context.get();
+    ar& context;
     ar& thread_id;
     ar& status;
     ar& entry_point;
@@ -63,9 +58,14 @@ void Thread::Acquire(Thread* thread) {
 }
 
 Thread::Thread(KernelSystem& kernel, u32 core_id)
-    : WaitObject(kernel), context(kernel.GetThreadManager(core_id).NewContext()),
-      can_schedule(true), core_id(core_id), thread_manager(kernel.GetThreadManager(core_id)) {}
-Thread::~Thread() {}
+    : WaitObject(kernel), core_id(core_id), thread_manager(kernel.GetThreadManager(core_id)) {}
+
+Thread::~Thread() {
+    auto process = owner_process.lock();
+    if (process) {
+        process->resource_limit->Release(ResourceLimitType::Thread, 1);
+    }
+}
 
 Thread* ThreadManager::GetCurrentThread() const {
     return current_thread.get();
@@ -318,13 +318,12 @@ void ThreadManager::DebugThreadQueue() {
  * @param entry_point Address of entry point for execution
  * @param arg User argument for thread
  */
-static void ResetThreadContext(const std::unique_ptr<ARM_Interface::ThreadContext>& context,
-                               u32 stack_top, u32 entry_point, u32 arg) {
-    context->Reset();
-    context->SetCpuRegister(0, arg);
-    context->SetProgramCounter(entry_point);
-    context->SetStackPointer(stack_top);
-    context->SetCpsr(USER32MODE | ((entry_point & 1) << 5)); // Usermode and THUMB mode
+static void ResetThreadContext(Core::ARM_Interface::ThreadContext& context, u32 stack_top,
+                               u32 entry_point, u32 arg) {
+    context.cpu_registers[0] = arg;
+    context.SetProgramCounter(entry_point);
+    context.SetStackPointer(stack_top);
+    context.cpsr = USER32MODE | ((entry_point & 1) << 5); // Usermode and THUMB mode
 }
 
 ResultVal<std::shared_ptr<Thread>> KernelSystem::CreateThread(
@@ -349,7 +348,7 @@ ResultVal<std::shared_ptr<Thread>> KernelSystem::CreateThread(
                           ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
     }
 
-    auto thread{std::make_shared<Thread>(*this, processor_id)};
+    auto thread = std::make_shared<Thread>(*this, processor_id);
 
     thread_managers[processor_id]->thread_list.push_back(thread);
     thread_managers[processor_id]->ready_queue.prepare(priority);
@@ -417,8 +416,8 @@ std::shared_ptr<Thread> SetupMainThread(KernelSystem& kernel, u32 entry_point, u
 
     std::shared_ptr<Thread> thread = std::move(thread_res).Unwrap();
 
-    thread->context->SetFpscr(FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO |
-                              FPSCR_IXC); // 0x03C00010
+    thread->context.fpscr =
+        FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO | FPSCR_IXC; // 0x03C00010
 
     // Note: The newly created thread will be run when the scheduler fires.
     return thread;
@@ -447,11 +446,11 @@ void ThreadManager::Reschedule() {
 }
 
 void Thread::SetWaitSynchronizationResult(ResultCode result) {
-    context->SetCpuRegister(0, result.raw);
+    context.cpu_registers[0] = result.raw;
 }
 
 void Thread::SetWaitSynchronizationOutput(s32 output) {
-    context->SetCpuRegister(1, output);
+    context.cpu_registers[1] = output;
 }
 
 s32 Thread::GetWaitObjectIndex(const WaitObject* object) const {

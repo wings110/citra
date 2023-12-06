@@ -21,16 +21,20 @@ add_custom_command(OUTPUT scm_rev.cpp
       "${VIDEO_CORE}/renderer_opengl/gl_shader_util.h"
       "${VIDEO_CORE}/renderer_vulkan/vk_shader_util.cpp"
       "${VIDEO_CORE}/renderer_vulkan/vk_shader_util.h"
+      "${VIDEO_CORE}/shader/generator/glsl_fs_shader_gen.cpp"
+      "${VIDEO_CORE}/shader/generator/glsl_fs_shader_gen.h"
       "${VIDEO_CORE}/shader/generator/glsl_shader_decompiler.cpp"
       "${VIDEO_CORE}/shader/generator/glsl_shader_decompiler.h"
       "${VIDEO_CORE}/shader/generator/glsl_shader_gen.cpp"
       "${VIDEO_CORE}/shader/generator/glsl_shader_gen.h"
+      "${VIDEO_CORE}/shader/generator/pica_fs_config.cpp"
+      "${VIDEO_CORE}/shader/generator/pica_fs_config.h"
       "${VIDEO_CORE}/shader/generator/shader_gen.cpp"
       "${VIDEO_CORE}/shader/generator/shader_gen.h"
       "${VIDEO_CORE}/shader/generator/shader_uniforms.cpp"
       "${VIDEO_CORE}/shader/generator/shader_uniforms.h"
-      "${VIDEO_CORE}/shader/generator/spv_shader_gen.cpp"
-      "${VIDEO_CORE}/shader/generator/spv_shader_gen.h"
+      "${VIDEO_CORE}/shader/generator/spv_fs_shader_gen.cpp"
+      "${VIDEO_CORE}/shader/generator/spv_fs_shader_gen.h"
       "${VIDEO_CORE}/shader/shader.cpp"
       "${VIDEO_CORE}/shader/shader.h"
       "${VIDEO_CORE}/pica.cpp"
@@ -53,6 +57,8 @@ add_custom_command(OUTPUT scm_rev.cpp
 add_library(citra_common STATIC
     aarch64/cpu_detect.cpp
     aarch64/cpu_detect.h
+    aarch64/oaknut_abi.h
+    aarch64/oaknut_util.h
     alignment.h
     android_storage.h
     android_storage.cpp
@@ -76,8 +82,6 @@ add_library(citra_common STATIC
     construct.h
     dynamic_library/dynamic_library.cpp
     dynamic_library/dynamic_library.h
-    dynamic_library/fdk-aac.cpp
-    dynamic_library/fdk-aac.h
     dynamic_library/ffmpeg.cpp
     dynamic_library/ffmpeg.h
     error.cpp
@@ -124,6 +128,7 @@ add_library(citra_common STATIC
     serialization/boost_flat_set.h
     serialization/boost_small_vector.hpp
     serialization/boost_vector.hpp
+    static_lru_cache.h
     string_literal.h
     string_util.cpp
     string_util.h
@@ -178,6 +183,10 @@ target_link_libraries(citra_common PRIVATE zstd)
 
 if ("x86_64" IN_LIST ARCHITECTURE)
     target_link_libraries(citra_common PRIVATE xbyak)
+endif()
+
+if ("arm64" IN_LIST ARCHITECTURE)
+    target_link_libraries(citra_common PRIVATE oaknut)
 endif()
 
 if (CITRA_USE_PRECOMPILED_HEADERS)

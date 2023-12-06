@@ -13,7 +13,6 @@
 #include "common/thread.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/lock.h"
 #include "core/hle/service/dsp/dsp_dsp.h"
 
 namespace AudioCore {
@@ -411,17 +410,15 @@ std::array<u8, Memory::DSP_RAM_SIZE>& DspLle::GetDspMemory() {
 void DspLle::SetInterruptHandler(
     std::function<void(Service::DSP::InterruptType type, DspPipe pipe)> handler) {
     impl->teakra.SetRecvDataHandler(0, [this, handler]() {
-        if (!impl->loaded)
+        if (!impl->loaded) {
             return;
-
-        std::lock_guard lock(HLE::g_hle_lock);
+        }
         handler(Service::DSP::InterruptType::Zero, static_cast<DspPipe>(0));
     });
     impl->teakra.SetRecvDataHandler(1, [this, handler]() {
-        if (!impl->loaded)
+        if (!impl->loaded) {
             return;
-
-        std::lock_guard lock(HLE::g_hle_lock);
+        }
         handler(Service::DSP::InterruptType::One, static_cast<DspPipe>(0));
     });
 
@@ -450,7 +447,6 @@ void DspLle::SetInterruptHandler(
                 impl->ReadPipe(static_cast<u8>(pipe),
                                impl->GetPipeReadableSize(static_cast<u8>(pipe)));
             } else {
-                std::lock_guard lock(HLE::g_hle_lock);
                 handler(Service::DSP::InterruptType::Pipe, static_cast<DspPipe>(pipe));
             }
         }
@@ -468,8 +464,12 @@ void DspLle::UnloadComponent() {
     impl->UnloadComponent();
 }
 
-DspLle::DspLle(Memory::MemorySystem& memory, Core::Timing& timing, bool multithread)
-    : impl(std::make_unique<Impl>(timing, multithread)) {
+DspLle::DspLle(Core::System& system, bool multithread)
+    : DspLle(system, system.Memory(), system.CoreTiming(), multithread) {}
+
+DspLle::DspLle(Core::System& system, Memory::MemorySystem& memory, Core::Timing& timing,
+               bool multithread)
+    : DspInterface(system), impl(std::make_unique<Impl>(timing, multithread)) {
     Teakra::AHBMCallback ahbm;
     ahbm.read8 = [&memory](u32 address) -> u8 {
         return *memory.GetFCRAMPointer(address - Memory::FCRAM_PADDR);

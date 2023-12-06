@@ -4,6 +4,7 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/math_util.h"
 #include "common/microprofile.h"
@@ -13,7 +14,7 @@
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/pica_to_gl.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
-#include "video_core/shader/generator/glsl_shader_gen.h"
+#include "video_core/shader/generator/shader_gen.h"
 #include "video_core/texture/texture_decode.h"
 #include "video_core/video_core.h"
 
@@ -28,12 +29,13 @@ MICROPROFILE_DEFINE(OpenGL_Drawing, "OpenGL", "Drawing", MP_RGB(128, 128, 192));
 MICROPROFILE_DEFINE(OpenGL_Display, "OpenGL", "Display", MP_RGB(128, 128, 192));
 
 using VideoCore::SurfaceType;
+using namespace Common::Literals;
 using namespace Pica::Shader::Generator;
 
-constexpr std::size_t VERTEX_BUFFER_SIZE = 16 * 1024 * 1024;
-constexpr std::size_t INDEX_BUFFER_SIZE = 2 * 1024 * 1024;
-constexpr std::size_t UNIFORM_BUFFER_SIZE = 2 * 1024 * 1024;
-constexpr std::size_t TEXTURE_BUFFER_SIZE = 2 * 1024 * 1024;
+constexpr std::size_t VERTEX_BUFFER_SIZE = 16_MiB;
+constexpr std::size_t INDEX_BUFFER_SIZE = 2_MiB;
+constexpr std::size_t UNIFORM_BUFFER_SIZE = 2_MiB;
+constexpr std::size_t TEXTURE_BUFFER_SIZE = 2_MiB;
 
 GLenum MakePrimitiveMode(Pica::PipelineRegs::TriangleTopology topology) {
     switch (topology) {
@@ -278,7 +280,15 @@ bool RasterizerOpenGL::SetupGeometryShader() {
         return false;
     }
 
-    shader_manager.UseFixedGeometryShader(regs);
+    // Enable the quaternion fix-up geometry-shader only if we are actually doing per-fragment
+    // lighting and care about proper quaternions. Otherwise just use standard vertex+fragment
+    // shaders
+    if (regs.lighting.disable) {
+        shader_manager.UseTrivialGeometryShader();
+    } else {
+        shader_manager.UseFixedGeometryShader(regs);
+    }
+
     return true;
 }
 
@@ -426,7 +436,7 @@ bool RasterizerOpenGL::Draw(bool accelerate, bool is_indexed) {
 
     // Sync and bind the shader
     if (shader_dirty) {
-        shader_manager.UseFragmentShader(regs, use_custom_normal);
+        shader_manager.UseFragmentShader(regs, user_config);
         shader_dirty = false;
     }
 
@@ -479,7 +489,7 @@ void RasterizerOpenGL::SyncTextureUnits(const Framebuffer* framebuffer) {
 
     // Reset transient draw state
     state.color_buffer.texture_2d = 0;
-    use_custom_normal = false;
+    user_config = {};
 
     const auto pica_textures = regs.texturing.GetTextures();
     for (u32 texture_index = 0; texture_index < pica_textures.size(); ++texture_index) {
@@ -566,10 +576,9 @@ void RasterizerOpenGL::BindTextureCube(const Pica::TexturingRegs::FullTextureCon
 
     Surface& surface = res_cache.GetTextureCube(config);
     Sampler& sampler = res_cache.GetSampler(texture.config);
-
-    state.texture_cube_unit.texture_cube = surface.Handle();
-    state.texture_cube_unit.sampler = sampler.Handle();
-    state.texture_units[0].texture_2d = 0;
+    state.texture_units[0].target = GL_TEXTURE_CUBE_MAP;
+    state.texture_units[0].texture_2d = surface.Handle();
+    state.texture_units[0].sampler = sampler.Handle();
 }
 
 void RasterizerOpenGL::BindMaterial(u32 texture_index, Surface& surface) {
@@ -577,20 +586,15 @@ void RasterizerOpenGL::BindMaterial(u32 texture_index, Surface& surface) {
         return;
     }
 
-    const auto bind_texture = [&](const TextureUnits::TextureUnit& unit, GLuint texture,
-                                  GLuint sampler) {
-        glActiveTexture(unit.Enum());
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindSampler(unit.id, sampler);
-    };
-
     const GLuint sampler = state.texture_units[texture_index].sampler;
     if (surface.HasNormalMap()) {
         if (regs.lighting.disable) {
             LOG_WARNING(Render_OpenGL, "Custom normal map used but scene has no light enabled");
         }
-        bind_texture(TextureUnits::TextureNormalMap, surface.Handle(2), sampler);
-        use_custom_normal = true;
+        glActiveTexture(TextureUnits::TextureNormalMap.Enum());
+        glBindTexture(GL_TEXTURE_2D, surface.Handle(2));
+        glBindSampler(TextureUnits::TextureNormalMap.id, sampler);
+        user_config.use_custom_normal.Assign(1);
     }
 }
 
@@ -607,7 +611,8 @@ bool RasterizerOpenGL::IsFeedbackLoop(u32 texture_index, const Framebuffer* fram
 }
 
 void RasterizerOpenGL::UnbindSpecial() {
-    state.texture_cube_unit.texture_cube = 0;
+    state.texture_units[0].texture_2d = 0;
+    state.texture_units[0].target = GL_TEXTURE_2D;
     state.image_shadow_texture_px = 0;
     state.image_shadow_texture_nx = 0;
     state.image_shadow_texture_py = 0;

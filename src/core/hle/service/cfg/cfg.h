@@ -82,7 +82,7 @@ enum ConfigBlockID {
     DebugModeBlockID = 0x00130000,
     ClockSequenceBlockID = 0x00150000,
     Unknown_0x00150001 = 0x00150001,
-    NpnsUrlID = 0x00150002, // Maybe? 3dbrew documentation is weirdly written.
+    ServerType = 0x00150002,
     Unknown_0x00160000 = 0x00160000,
     MiiverseAccessKeyBlockID = 0x00170000,
     QtmInfraredLedRelatedBlockID = 0x00180000,
@@ -178,7 +178,7 @@ DECLARE_ENUM_FLAG_OPERATORS(AccessFlag);
 
 class Module final {
 public:
-    Module();
+    Module(Core::System& system_);
     ~Module();
 
     class Interface : public ServiceFramework<Interface> {
@@ -229,6 +229,27 @@ public:
          *      2 : Value loaded from SecureInfo offset 0x101
          */
         void SecureInfoGetByte101(Kernel::HLERequestContext& ctx);
+
+        /**
+         * CFG::SetUUIDClockSequence service function
+         *  Inputs:
+         *      1 : UUID Clock Sequence
+         *  Outputs:
+         *      0 : Result Header code
+         *      1 : Result of function, 0 on success, otherwise error code
+         */
+        void SetUUIDClockSequence(Kernel::HLERequestContext& ctx);
+
+        /**
+         * CFG::GetUUIDClockSequence service function
+         *  Inputs:
+         *      1 : None
+         *  Outputs:
+         *      0 : Result Header code
+         *      1 : Result of function, 0 on success, otherwise error code
+         *      2 : UUID Clock Sequence
+         */
+        void GetUUIDClockSequence(Kernel::HLERequestContext& ctx);
 
         /**
          * CFG::GetTransferableId service function
@@ -338,6 +359,25 @@ public:
     };
 
 private:
+    // Represents save data that would normally be stored in the MCU
+    // on real hardware. Try to keep this struct backwards compatible
+    // if a new version is needed to prevent data loss.
+    struct MCUData {
+        struct Header {
+            static constexpr u32 MAGIC_VALUE = 0x4455434D;
+            static constexpr u32 VERSION_VALUE = 1;
+            u32 magic = MAGIC_VALUE;
+            u32 version = VERSION_VALUE;
+            u64 reserved = 0;
+        };
+        Header header;
+        u32 clock_sequence = 0;
+
+        [[nodiscard]] bool IsValid() const {
+            return header.magic == Header::MAGIC_VALUE && header.version == Header::VERSION_VALUE;
+        }
+    };
+
     ResultVal<void*> GetConfigBlockPointer(u32 block_id, u32 size, AccessFlag accesss_flag);
 
     /**
@@ -397,15 +437,13 @@ private:
      */
     ResultCode LoadConfigNANDSaveFile();
 
+    /**
+     * Loads MCU specific data
+     */
+    void LoadMCUConfig();
+
 public:
     u32 GetRegionValue();
-
-    /**
-     * Set the region codes preferred by the game so that CFG will adjust to it when the region
-     * setting is auto.
-     * @param region_codes the preferred region codes to set
-     */
-    void SetPreferredRegionCodes(std::span<const u32> region_codes);
 
     // Utilities for frontend to set config data.
     // Note: UpdateConfigNANDSavegame should be called after making changes to config data.
@@ -538,11 +576,22 @@ public:
      */
     ResultCode UpdateConfigNANDSavegame();
 
+    /**
+     * Saves MCU specific data
+     */
+    void SaveMCUConfig();
+
 private:
+    void UpdatePreferredRegionCode();
+    SystemLanguage GetRawSystemLanguage();
+
+    Core::System& system;
+
     static constexpr u32 CONFIG_SAVEFILE_SIZE = 0x8000;
     std::array<u8, CONFIG_SAVEFILE_SIZE> cfg_config_file_buffer;
     std::unique_ptr<FileSys::ArchiveBackend> cfg_system_save_data_archive;
     u32 preferred_region_code = 0;
+    MCUData mcu_data{};
 
     template <class Archive>
     void serialize(Archive& ar, const unsigned int);
@@ -558,4 +607,5 @@ std::string GetConsoleIdHash(Core::System& system);
 
 } // namespace Service::CFG
 
+SERVICE_CONSTRUCT(Service::CFG::Module)
 BOOST_CLASS_EXPORT_KEY(Service::CFG::Module)

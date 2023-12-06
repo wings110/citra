@@ -6,6 +6,7 @@
 #include "common/archives.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/resource_limit.h"
 #include "core/hle/result.h"
 #include "core/hle/service/csnd/csnd_snd.h"
 
@@ -235,7 +236,7 @@ void CSND_SND::Shutdown(Kernel::HLERequestContext& ctx) {
 void CSND_SND::ExecuteCommands(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
     const u32 addr = rp.Pop<u32>();
-    LOG_WARNING(Service_CSND, "(STUBBED) called, addr=0x{:08X}", addr);
+    LOG_DEBUG(Service_CSND, "(STUBBED) called, addr=0x{:08X}", addr);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
     if (!shared_memory) {

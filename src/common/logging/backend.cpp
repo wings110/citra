@@ -293,6 +293,10 @@ public:
         instance->StartBackendThread();
     }
 
+    static void Stop() {
+        instance->StopBackendThread();
+    }
+
     Impl(const Impl&) = delete;
     Impl& operator=(const Impl&) = delete;
 
@@ -407,6 +411,15 @@ private:
         });
     }
 
+    void StopBackendThread() {
+        backend_thread.request_stop();
+        if (backend_thread.joinable()) {
+            backend_thread.join();
+        }
+
+        ForEachBackend([](Backend& backend) { backend.Flush(); });
+    }
+
     Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsigned int line_nr,
                       const char* function, std::string&& message) const {
         using std::chrono::duration_cast;
@@ -513,6 +526,10 @@ void Initialize(std::string_view log_file) {
 
 void Start() {
     Impl::Start();
+}
+
+void Stop() {
+    Impl::Stop();
 }
 
 void DisableLoggingInTests() {

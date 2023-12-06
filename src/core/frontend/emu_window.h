@@ -79,6 +79,11 @@ class GraphicsContext {
 public:
     virtual ~GraphicsContext();
 
+    /// Checks whether this context uses OpenGL ES.
+    virtual bool IsGLES() {
+        return false;
+    }
+
     /// Inform the driver to swap the front/back buffers and present the current image
     virtual void SwapBuffers(){};
 

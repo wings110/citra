@@ -25,6 +25,7 @@
 namespace Kernel {
 
 class Thread;
+class ResourceLimit;
 
 enum class ArbitrationType : u32 {
     Signal,
@@ -51,6 +52,7 @@ public:
         return HANDLE_TYPE;
     }
 
+    std::shared_ptr<ResourceLimit> resource_limit;
     std::string name; ///< Name of address arbiter object (optional)
 
     ResultCode ArbitrateAddress(std::shared_ptr<Thread> thread, ArbitrationType type, VAddr address,
@@ -65,11 +67,11 @@ private:
     void WaitThread(std::shared_ptr<Thread> thread, VAddr wait_address);
 
     /// Resume all threads found to be waiting on the address under this address arbiter
-    void ResumeAllThreads(VAddr address);
+    u64 ResumeAllThreads(VAddr address);
 
     /// Resume one thread found to be waiting on the address under this address arbiter and return
     /// the resumed thread.
-    std::shared_ptr<Thread> ResumeHighestPriorityThread(VAddr address);
+    bool ResumeHighestPriorityThread(VAddr address);
 
     /// Threads waiting for the address arbiter to be signaled.
     std::vector<std::shared_ptr<Thread>> waiting_threads;
@@ -86,6 +88,7 @@ private:
         ar& name;
         ar& waiting_threads;
         ar& timeout_callback;
+        ar& resource_limit;
     }
 };
 

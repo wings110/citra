@@ -24,6 +24,7 @@
 // windows.h needs to be included before other windows headers
 #include <direct.h> // getcwd
 #include <io.h>
+#include <share.h>
 #include <shellapi.h>
 #include <shlobj.h> // for SHGetFolderPath
 #include <tchar.h>
@@ -1089,14 +1090,13 @@ bool IOFile::Open() {
     Close();
 
 #ifdef _WIN32
-    if (flags != 0) {
-        m_file = _wfsopen(Common::UTF8ToUTF16W(filename).c_str(),
-                          Common::UTF8ToUTF16W(openmode).c_str(), flags);
-        m_good = m_file != nullptr;
-    } else {
-        m_good = _wfopen_s(&m_file, Common::UTF8ToUTF16W(filename).c_str(),
-                           Common::UTF8ToUTF16W(openmode).c_str()) == 0;
+    if (flags == 0) {
+        flags = _SH_DENYNO;
     }
+    m_file = _wfsopen(Common::UTF8ToUTF16W(filename).c_str(),
+                      Common::UTF8ToUTF16W(openmode).c_str(), flags);
+    m_good = m_file != nullptr;
+
 #elif ANDROID
     // Check whether filepath is startsWith content
     AndroidStorage::AndroidOpenMode android_open_mode = AndroidStorage::ParseOpenmode(openmode);
@@ -1184,6 +1184,43 @@ std::size_t IOFile::ReadImpl(void* data, std::size_t length, std::size_t data_si
     DEBUG_ASSERT(data != nullptr);
 
     return FREAD(data, data_size, length, m_file);
+}
+
+#ifdef _WIN32
+static std::size_t pread(int fd, void* buf, size_t count, uint64_t offset) {
+    long unsigned int read_bytes = 0;
+    OVERLAPPED overlapped = {0};
+    HANDLE file = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
+
+    overlapped.OffsetHigh = static_cast<uint32_t>(offset >> 32);
+    overlapped.Offset = static_cast<uint32_t>(offset & 0xFFFF'FFFFLL);
+    SetLastError(0);
+    bool ret = ReadFile(file, buf, static_cast<uint32_t>(count), &read_bytes, &overlapped);
+
+    if (!ret && GetLastError() != ERROR_HANDLE_EOF) {
+        errno = GetLastError();
+        return std::numeric_limits<std::size_t>::max();
+    }
+    return read_bytes;
+}
+#else
+#define pread ::pread
+#endif
+
+std::size_t IOFile::ReadAtImpl(void* data, std::size_t length, std::size_t data_size,
+                               std::size_t offset) {
+    if (!IsOpen()) {
+        m_good = false;
+        return std::numeric_limits<std::size_t>::max();
+    }
+
+    if (length == 0) {
+        return 0;
+    }
+
+    DEBUG_ASSERT(data != nullptr);
+
+    return pread(fileno(m_file), data, data_size * length, offset);
 }
 
 std::size_t IOFile::WriteImpl(const void* data, std::size_t length, std::size_t data_size) {

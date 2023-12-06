@@ -109,6 +109,8 @@ add_library(video_core STATIC
     renderer_vulkan/vk_graphics_pipeline.h
     renderer_vulkan/vk_master_semaphore.cpp
     renderer_vulkan/vk_master_semaphore.h
+    renderer_vulkan/vk_memory_util.cpp
+    renderer_vulkan/vk_memory_util.h
     renderer_vulkan/vk_rasterizer.cpp
     renderer_vulkan/vk_rasterizer.h
     renderer_vulkan/vk_rasterizer_cache.cpp
@@ -135,23 +137,30 @@ add_library(video_core STATIC
     renderer_vulkan/vk_texture_runtime.cpp
     renderer_vulkan/vk_texture_runtime.h
     shader/debug_data.h
+    shader/generator/glsl_fs_shader_gen.cpp
+    shader/generator/glsl_fs_shader_gen.h
     shader/generator/glsl_shader_decompiler.cpp
     shader/generator/glsl_shader_decompiler.h
     shader/generator/glsl_shader_gen.cpp
     shader/generator/glsl_shader_gen.h
+    shader/generator/pica_fs_config.cpp
+    shader/generator/pica_fs_config.h
+    shader/generator/profile.h
     shader/generator/shader_gen.cpp
     shader/generator/shader_gen.h
     shader/generator/shader_uniforms.cpp
     shader/generator/shader_uniforms.h
-    shader/generator/spv_shader_gen.cpp
-    shader/generator/spv_shader_gen.h
+    shader/generator/spv_fs_shader_gen.cpp
+    shader/generator/spv_fs_shader_gen.h
     shader/shader.cpp
     shader/shader.h
     shader/shader_interpreter.cpp
     shader/shader_interpreter.h
-    shader/shader_jit_x64.cpp
+    shader/shader_jit.cpp
+    shader/shader_jit.h
+    shader/shader_jit_a64_compiler.cpp
+    shader/shader_jit_a64_compiler.h
     shader/shader_jit_x64_compiler.cpp
-    shader/shader_jit_x64.h
     shader/shader_jit_x64_compiler.h
     texture/etc1.cpp
     texture/etc1.h
@@ -175,6 +184,10 @@ target_link_libraries(video_core PRIVATE vulkan-headers vma glad sirit SPIRV gls
 
 if ("x86_64" IN_LIST ARCHITECTURE)
     target_link_libraries(video_core PUBLIC xbyak)
+endif()
+
+if ("arm64" IN_LIST ARCHITECTURE)
+    target_link_libraries(video_core PUBLIC oaknut)
 endif()
 
 if (CITRA_USE_PRECOMPILED_HEADERS)

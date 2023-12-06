@@ -29,9 +29,9 @@ add_library(citra-android SHARED
     id_cache.cpp
     id_cache.h
     native.cpp
-    native.h
     ndk_motion.cpp
     ndk_motion.h
+    system_save_game.cpp
 )
 
 target_link_libraries(citra-android PRIVATE audio_core citra_common citra_core input_common network)

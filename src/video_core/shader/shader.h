@@ -22,8 +22,8 @@
 
 namespace Pica::Shader {
 
-constexpr unsigned MAX_PROGRAM_CODE_LENGTH = 4096;
-constexpr unsigned MAX_SWIZZLE_DATA_LENGTH = 4096;
+constexpr u32 MAX_PROGRAM_CODE_LENGTH = 4096;
+constexpr u32 MAX_SWIZZLE_DATA_LENGTH = 4096;
 using ProgramCode = std::array<u32, MAX_PROGRAM_CODE_LENGTH>;
 using SwizzleData = std::array<u32, MAX_SWIZZLE_DATA_LENGTH>;
 
@@ -33,7 +33,7 @@ struct AttributeBuffer {
 private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const u32 file_version) {
         ar& attr;
     }
 };
@@ -62,7 +62,7 @@ struct OutputVertex {
 
 private:
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int) {
+    void serialize(Archive& ar, const u32) {
         ar& pos;
         ar& quat;
         ar& color;
@@ -113,7 +113,7 @@ struct GSEmitter {
 private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const u32 file_version) {
         ar& buffer;
         ar& vertex_id;
         ar& prim_emit;
@@ -132,6 +132,13 @@ static_assert(std::is_standard_layout<GSEmitter>::value, "GSEmitter is not stand
  */
 struct UnitState {
     explicit UnitState(GSEmitter* emitter = nullptr);
+
+    // Two Address registers and one loop counter
+    // TODO: How many bits do these actually have?
+    s32 address_registers[3];
+
+    bool conditional_code[2];
+
     struct Registers {
         // The registers are accessed by the shader JIT using SSE instructions, and are therefore
         // required to be 16-byte aligned.
@@ -142,7 +149,7 @@ struct UnitState {
     private:
         friend class boost::serialization::access;
         template <class Archive>
-        void serialize(Archive& ar, const unsigned int file_version) {
+        void serialize(Archive& ar, const u32 file_version) {
             ar& input;
             ar& temporary;
             ar& output;
@@ -150,23 +157,17 @@ struct UnitState {
     } registers;
     static_assert(std::is_trivial_v<Registers>, "Structure is not POD");
 
-    bool conditional_code[2];
-
-    // Two Address registers and one loop counter
-    // TODO: How many bits do these actually have?
-    s32 address_registers[3];
-
     GSEmitter* emitter_ptr;
 
-    static std::size_t InputOffset(int register_index) {
+    static std::size_t InputOffset(s32 register_index) {
         return offsetof(UnitState, registers.input) + register_index * sizeof(Common::Vec4<f24>);
     }
 
-    static std::size_t OutputOffset(int register_index) {
+    static std::size_t OutputOffset(s32 register_index) {
         return offsetof(UnitState, registers.output) + register_index * sizeof(Common::Vec4<f24>);
     }
 
-    static std::size_t TemporaryOffset(int register_index) {
+    static std::size_t TemporaryOffset(s32 register_index) {
         return offsetof(UnitState, registers.temporary) +
                register_index * sizeof(Common::Vec4<f24>);
     }
@@ -184,7 +185,7 @@ struct UnitState {
 private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const u32 file_version) {
         ar& registers;
         ar& conditional_code;
         ar& address_registers;
@@ -207,7 +208,7 @@ struct GSUnitState : public UnitState {
 private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const u32 file_version) {
         ar& boost::serialization::base_object<UnitState>(*this);
         ar& emitter;
     }
@@ -221,22 +222,22 @@ struct Uniforms {
     std::array<bool, 16> b;
     std::array<Common::Vec4<u8>, 4> i;
 
-    static std::size_t GetFloatUniformOffset(unsigned index) {
+    static std::size_t GetFloatUniformOffset(u32 index) {
         return offsetof(Uniforms, f) + index * sizeof(Common::Vec4<f24>);
     }
 
-    static std::size_t GetBoolUniformOffset(unsigned index) {
+    static std::size_t GetBoolUniformOffset(u32 index) {
         return offsetof(Uniforms, b) + index * sizeof(bool);
     }
 
-    static std::size_t GetIntUniformOffset(unsigned index) {
+    static std::size_t GetIntUniformOffset(u32 index) {
         return offsetof(Uniforms, i) + index * sizeof(Common::Vec4<u8>);
     }
 
 private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const u32 file_version) {
         ar& f;
         ar& b;
         ar& i;
@@ -251,7 +252,7 @@ struct ShaderSetup {
 
     /// Data private to ShaderEngines
     struct EngineData {
-        unsigned int entry_point;
+        u32 entry_point;
         /// Used by the JIT, points to a compiled shader object.
         const void* cached_shader = nullptr;
     } engine_data;
@@ -288,7 +289,7 @@ private:
 
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const u32 file_version) {
         ar& uniforms;
         ar& program_code;
         ar& swizzle_data;
@@ -307,7 +308,7 @@ public:
      * Performs any shader unit setup that only needs to happen once per shader (as opposed to once
      * per vertex, which would happen within the `Run` function).
      */
-    virtual void SetupBatch(ShaderSetup& setup, unsigned int entry_point) = 0;
+    virtual void SetupBatch(ShaderSetup& setup, u32 entry_point) = 0;
 
     /**
      * Runs the currently setup shader.

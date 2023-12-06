@@ -17,10 +17,10 @@
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/hle_ipc.h"
+#include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/semaphore.h"
 #include "core/hle/kernel/server_port.h"
 #include "core/hle/kernel/server_session.h"
-#include "core/hle/lock.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sm/srv.h"
 
@@ -286,7 +286,7 @@ void SRV::RegisterService(Kernel::HLERequestContext& ctx) {
     rb.PushMoveObjects(port.Unwrap());
 }
 
-SRV::SRV(Core::System& system) : ServiceFramework("srv:", 4), system(system) {
+SRV::SRV(Core::System& system) : ServiceFramework("srv:", 64), system(system) {
     static const FunctionInfo functions[] = {
         // clang-format off
         {0x0001, &SRV::RegisterClient, "RegisterClient"},

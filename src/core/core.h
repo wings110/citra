@@ -14,8 +14,6 @@
 #include "core/movie.h"
 #include "core/perf_stats.h"
 
-class ARM_Interface;
-
 namespace Frontend {
 class EmuWindow;
 class ImageInterface;
@@ -69,6 +67,7 @@ class AppLoader;
 
 namespace Core {
 
+class ARM_Interface;
 class TelemetrySession;
 class ExclusiveMonitor;
 class Timing;
@@ -174,6 +173,8 @@ public:
     void PrepareReschedule();
 
     [[nodiscard]] PerfStats::Results GetAndResetPerfStats();
+
+    [[nodiscard]] PerfStats::Results GetLastPerfStats();
 
     /**
      * Gets a reference to the emulated CPU.
