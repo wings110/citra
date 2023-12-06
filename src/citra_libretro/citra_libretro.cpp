@@ -98,7 +98,7 @@ void retro_deinit() {
 
     delete emu_instance;
 
-    Common::Log::LibRetroStop();
+    Common::Log::Stop();
 }
 
 unsigned retro_api_version() {
@@ -183,7 +183,7 @@ uintptr_t LibRetro::GetFramebuffer() {
 Settings::TextureFilter GetTextureFilter(std::string name) {
     if (name == "Anime4K Ultrafast") return Settings::TextureFilter::Anime4K;
     if (name == "Bicubic") return Settings::TextureFilter::Bicubic;
-    if (name == "NearestNeighbor") return Settings::TextureFilter::NearestNeighbor;
+    //if (name == "NearestNeighbor") return Settings::TextureFilter::NearestNeighbor;
     if (name == "ScaleForce") return Settings::TextureFilter::ScaleForce;
     if (name == "xBRZ freescale") return Settings::TextureFilter::xBRZ;
     if (name == "MMPX") return Settings::TextureFilter::MMPX;
