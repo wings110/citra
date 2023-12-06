@@ -99,10 +99,6 @@ public:
 
     void EnableForStacktrace() override {}
 
-    /*void Stop() {
-        callback = nullptr;
-    }*/
-
 private:
     retro_log_printf_t callback = nullptr;
 };
