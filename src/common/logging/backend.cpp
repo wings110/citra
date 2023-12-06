@@ -99,9 +99,9 @@ public:
 
     void EnableForStacktrace() override {}
 
-    void Stop() {
+    /*void Stop() {
         callback = nullptr;
-    }
+    }*/
 
 private:
     retro_log_printf_t callback = nullptr;
@@ -269,9 +269,6 @@ public:
         instance = std::unique_ptr<Impl, decltype(&Deleter)>(
             new Impl(callback, filter), Deleter);
         initialization_in_progress_suppress_logging = false;
-    }
-    void Stop() {
-        instance->libretro_backend.Stop();
     }
 #endif
     static void Initialize(std::string_view log_file) {
@@ -514,9 +511,6 @@ private:
 void LibRetroStart(retro_log_printf_t callback) {
     Impl::Initialize(callback);
     Impl::Start();
-}
-void LibRetroStop() {
-    Impl::Instance().Stop();
 }
 #endif
 

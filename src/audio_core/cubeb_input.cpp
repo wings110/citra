@@ -105,8 +105,6 @@ void CubebInput::StartSampling(const InputParameters& params) {
         StopSampling();
         return;
     }
-
-    is_sampling = true;
 }
 
 void CubebInput::StopSampling() {

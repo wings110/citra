@@ -31,7 +31,7 @@ public:
     /// Releases the GL context from the caller thread
     void DoneCurrent() override;
 
-    void SetupFramebuffer();
+    void SetupFramebuffer() override;
 
     /// Prepares the window for rendering
     void UpdateLayout();

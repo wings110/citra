@@ -18,7 +18,6 @@ class Filter;
 void Initialize(std::string_view log_file = "");
 #ifdef HAVE_LIBRETRO
 void LibRetroStart(retro_log_printf_t callback);
-void LibRetroStop();
 #endif
 
 void Start();

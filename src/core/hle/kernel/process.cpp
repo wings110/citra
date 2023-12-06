@@ -314,7 +314,6 @@ ResultCode Process::HeapFree(VAddr target, u32 size) {
     ResultCode result = vm_manager.UnmapRange(target, size);
     ASSERT(result.IsSuccess());
 
-    holding_memory -= backing_blocks;
     memory_used -= size;
     resource_limit->Release(ResourceLimitType::Commit, size);
 
