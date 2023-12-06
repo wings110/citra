@@ -55,7 +55,7 @@ RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window
                                 VkInstance vk_instance, VkPhysicalDevice gpu)
     : RendererBase{system, window, nullptr}, memory{system.Memory()},
       instance{system.TelemetrySession(), vk_instance, gpu},
-      scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
+      scheduler{instance}, renderpass_cache{instance, scheduler}, pool{instance},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
                     VERTEX_BUFFER_SIZE},
       present_set_provider{instance, pool, PRESENT_BINDINGS}
@@ -87,7 +87,7 @@ RendererVulkan::RendererVulkan(Core::System& system, Frontend::EmuWindow& window
                                Frontend::EmuWindow* secondary_window)
     : RendererBase{system, window, secondary_window}, memory{system.Memory()},
       instance{system.TelemetrySession(), window, Settings::values.physical_device.GetValue()},
-      scheduler{instance, renderpass_cache}, renderpass_cache{instance, scheduler}, pool{instance},
+      scheduler{instance}, renderpass_cache{instance, scheduler}, pool{instance},
       //main_window{window, instance, scheduler},
       vertex_buffer{instance, scheduler, vk::BufferUsageFlagBits::eVertexBuffer,
                     VERTEX_BUFFER_SIZE},
@@ -1114,7 +1114,7 @@ bool RendererVulkan::TryRenderScreenshotWithHostMemory() {
     device.bindBufferMemory(imported_buffer.get(), imported_memory.get(), 0);
 
     Frame frame{};
-    main_window.RecreateFrame(&frame, width, height);
+    main_window->RecreateFrame(&frame, width, height);
 
     DrawScreens(&frame, layout, false);
 
