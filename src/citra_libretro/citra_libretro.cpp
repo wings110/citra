@@ -138,6 +138,7 @@ void LibRetro::OnConfigureEnvironment() {
         {"citra_use_acc_geo_shaders", "Enable accurate geometry shaders (only for H/W shaders); enabled|disabled"},
         {"citra_use_acc_mul", "Enable accurate shaders multiplication (only for H/W shaders); enabled|disabled"},
         {"citra_texture_filter", "Texture filter type; none|Anime4K Ultrafast|Bicubic|NearestNeighbor|ScaleForce|xBRZ freescale|MMPX"},
+        {"citra_texture_sampling", "Texture sampling type; GameControlled|NearestNeighbor|Linear"},
         {"citra_custom_textures", "Enable custom textures; disabled|enabled"},
         {"citra_dump_textures", "Dump textures; disabled|enabled"},
         {"citra_resolution_factor",
@@ -183,12 +184,18 @@ uintptr_t LibRetro::GetFramebuffer() {
 Settings::TextureFilter GetTextureFilter(std::string name) {
     if (name == "Anime4K Ultrafast") return Settings::TextureFilter::Anime4K;
     if (name == "Bicubic") return Settings::TextureFilter::Bicubic;
-    //if (name == "NearestNeighbor") return Settings::TextureFilter::NearestNeighbor;
     if (name == "ScaleForce") return Settings::TextureFilter::ScaleForce;
     if (name == "xBRZ freescale") return Settings::TextureFilter::xBRZ;
     if (name == "MMPX") return Settings::TextureFilter::MMPX;
 
     return Settings::TextureFilter::None;
+}
+
+Settings::TextureSampling GetTextureSampling(std::string name) {
+    if (name == "NearestNeighbor") return Settings::TextureSampling::NearestNeighbor;
+    if (name == "Linear") return Settings::TextureSampling::Linear;
+
+    return Settings::TextureSampling::GameControlled;
 }
 
 /**
@@ -276,6 +283,8 @@ void UpdateSettings() {
 #endif
     Settings::values.texture_filter =
         GetTextureFilter(LibRetro::FetchVariable("citra_texture_filter", "none"));
+    Settings::values.texture_sampling =
+        GetTextureSampling(LibRetro::FetchVariable("citra_texture_sampling", "GameControlled"));
     Settings::values.dump_textures =
         LibRetro::FetchVariable("citra_dump_textures", "disabled") == "enabled";
     Settings::values.custom_textures =
