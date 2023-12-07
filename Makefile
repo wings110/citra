@@ -104,8 +104,8 @@ ifeq ($(platform), unix)
    fpic := -fPIC
    SHARED := -shared -Wl,--version-script=$(SRC_DIR)/citra_libretro/link.T -Wl,--no-undefined
    LIBS +=-lpthread -lGL -ldl
-   HAVE_FFMPEG = 1
-   HAVE_FFMPEG_STATIC = 1
+   #HAVE_FFMPEG = 1
+   #HAVE_FFMPEG_STATIC = 1
 ifeq ($(HAVE_FFMPEG_STATIC), 1)
    LIBS += $(EXTERNALS_DIR)/ffmpeg/libavcodec/libavcodec.a $(EXTERNALS_DIR)/ffmpeg/libavutil/libavutil.a
 else
@@ -356,7 +356,7 @@ DYNARMICFLAGS += -D__LIBRETRO__ $(fpic) $(DEFINES) $(DYNARMICINCFLAGS) $(INCFLAG
 CXXFLAGS 	  += -D__LIBRETRO__ $(fpic) $(DEFINES) $(INCFLAGS) $(INCFLAGS_PLATFORM)
 
 OBJOUT   = -o
-LINKOUT  = -o 
+LINKOUT  = -o
 
 ifneq (,$(findstring msvc,$(platform)))
 	OBJOUT = -Fo
@@ -418,20 +418,39 @@ $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/src,$p),$p,))
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)
+	rm -rf $(SRC_DIR)/video_core/shaders
 ifeq ($(HAVE_FFMPEG_STATIC), 1)
 	cd $(EXTERNALS_DIR)/ffmpeg && $(MAKE) clean
 endif
 
+GLSLANG := glslang
+ifeq (, $(shell which $(GLSLANG)))
+GLSLANG := glslangValidator
+ifeq (, $(shell which $(GLSLANG)))
+$(error Required program `glslang` (or `glslangValidator`) not found.)
+endif
+endif
+
 shaders: $(SHADER_FILES)
-	mkdir -p $(SRC_DIR)/video_core/shaders
 	for SHADER_FILE in $^; do \
+		OUT_DIR=$$(dirname "$(SRC_DIR)/video_core/shaders/$$SHADER_FILE"); \
 		FILENAME=$$(basename "$$SHADER_FILE"); \
-		SHADER_NAME=$$(echo "$$FILENAME" | sed -e "s/\./_/g"); \
-		rm -f $(SRC_DIR)/video_core/shaders/$$FILENAME; \
-		echo "#pragma once" >> $(SRC_DIR)/video_core/shaders/$$FILENAME; \
-		echo "constexpr std::string_view $$SHADER_NAME = R\"(" >> $(SRC_DIR)/video_core/shaders/$$FILENAME; \
-		cat $$SHADER_FILE >> $(SRC_DIR)/video_core/shaders/$$FILENAME; \
-		echo ")\";" >> $(SRC_DIR)/video_core/shaders/$$FILENAME; \
+		SHADER_NAME=$$(echo "$$FILENAME" | sed -e 's/\./_/g'); \
+		OUT_FILE="$$OUT_DIR/$$SHADER_NAME"; \
+		if [ "$$FILENAME" = "$${FILENAME#vulkan}" ]; then \
+			SHADER_CONTENT=$$(cat $$SHADER_FILE | sed -e 's/"/'\''/g'); \
+			SHADER_CONTENT=$$(echo "$$SHADER_CONTENT" | sed -e 's/.*/"&'\\\\\\\\'n"/'); \
+			mkdir -p "$$OUT_DIR"; \
+			echo "$$SHADER_CONTENT" > $$OUT_FILE; \
+			cat $(SRC_DIR)/video_core/host_shaders/source_shader.h.in | sed -e "s/@CONTENTS_NAME@/$$(echo $$SHADER_NAME | tr '[a-z]' '[A-Z]')/" > $$OUT_FILE.h; \
+			sed -i -e "/@CONTENTS@/ { r $$OUT_FILE" -e "d }" $$OUT_FILE.h; \
+			rm -f $$OUT_FILE; \
+		fi; \
+		if [ "$$FILENAME" = "$${FILENAME#opengl}" ]; then \
+			SHADER_NAME=$${SHADER_NAME}_spv; \
+			$(GLSLANG) --target-env vulkan1.1 --glsl-version 450 -Dgl_VertexID=gl_VertexIndex \
+				--variable-name $$(echo $$SHADER_NAME | tr '[a-z]' '[A-Z]') -o $${OUT_FILE}_spv.h $$SHADER_FILE; \
+		fi; \
 	done
 
 

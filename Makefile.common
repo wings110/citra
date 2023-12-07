@@ -1,5 +1,6 @@
 INCFLAGS := -I$(SRC_DIR) \
             -I$(SRC_DIR)/video_core \
+            -I$(SRC_DIR)/video_core/shaders/src \
             -I$(EXTERNALS_DIR) \
             -I$(EXTERNALS_DIR)/dynarmic/include \
             -I$(EXTERNALS_DIR)/enet/include \
@@ -733,14 +734,24 @@ SOURCES_CXX += $(SRC_DIR)/citra_libretro/emu_window/libretro_window.cpp \
                $(SRC_DIR)/citra_libretro/core_settings.cpp \
                $(SRC_DIR)/citra_libretro/libretro_logger.cpp
 
-SHADER_FILES += $(SRC_DIR)/video_core/renderer_opengl/depth_to_color.vert \
-                $(SRC_DIR)/video_core/renderer_opengl/depth_to_color.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/ds_to_color.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/anime4k/refine.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/anime4k/x_gradient.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/anime4k/y_gradient.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/bicubic/bicubic.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/scale_force/scale_force.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/tex_coord.vert \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/xbrz/xbrz_freescale.frag \
-                $(SRC_DIR)/video_core/renderer_opengl/texture_filters/xbrz/xbrz_freescale.vert
+SHADER_FILES += $(SRC_DIR)/video_core/host_shaders/format_reinterpreter/d24s8_to_rgba8.frag \
+                $(SRC_DIR)/video_core/host_shaders/format_reinterpreter/rgba4_to_rgb5a1.frag \
+                $(SRC_DIR)/video_core/host_shaders/format_reinterpreter/vulkan_d24s8_to_rgba8.comp \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/bicubic.frag \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/refine.frag \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/scale_force.frag \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/xbrz_freescale.frag \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/mmpx.frag \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/x_gradient.frag \
+                $(SRC_DIR)/video_core/host_shaders/texture_filtering/y_gradient.frag \
+                $(SRC_DIR)/video_core/host_shaders/full_screen_triangle.vert \
+                $(SRC_DIR)/video_core/host_shaders/opengl_present.frag \
+                $(SRC_DIR)/video_core/host_shaders/opengl_present.vert \
+                $(SRC_DIR)/video_core/host_shaders/opengl_present_anaglyph.frag \
+                $(SRC_DIR)/video_core/host_shaders/opengl_present_interlaced.frag \
+                $(SRC_DIR)/video_core/host_shaders/vulkan_depth_to_buffer.comp \
+                $(SRC_DIR)/video_core/host_shaders/vulkan_present.frag \
+                $(SRC_DIR)/video_core/host_shaders/vulkan_present.vert \
+                $(SRC_DIR)/video_core/host_shaders/vulkan_present_anaglyph.frag \
+                $(SRC_DIR)/video_core/host_shaders/vulkan_present_interlaced.frag \
+                $(SRC_DIR)/video_core/host_shaders/vulkan_blit_depth_stencil.frag
