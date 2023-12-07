@@ -1,11 +1,14 @@
 INCFLAGS := -I$(SRC_DIR) \
-            -I$(SRC_DIR)/video_core/shaders/src1 \
+            -I$(SRC_DIR)/video_core/shaders/src \
             -I$(EXTERNALS_DIR) \
             -I$(EXTERNALS_DIR)/dds-ktx \
+            -I$(EXTERNALS_DIR)/dynarmic/externals/robin-map/include \
             -I$(EXTERNALS_DIR)/dynarmic/src \
             -I$(EXTERNALS_DIR)/enet/include \
             -I$(EXTERNALS_DIR)/open_source_archives/include \
             -I$(EXTERNALS_DIR)/fmt/include \
+            -I$(EXTERNALS_DIR)/httplib \
+            -I$(EXTERNALS_DIR)/libressl/include \
             -I$(EXTERNALS_DIR)/microprofile \
             -I$(EXTERNALS_DIR)/nihstro/include \
             -I$(EXTERNALS_DIR)/boost \
@@ -13,6 +16,7 @@ INCFLAGS := -I$(SRC_DIR) \
             -I$(EXTERNALS_DIR)/libretro-common/include \
             -I$(EXTERNALS_DIR)/teakra/include \
             -I$(EXTERNALS_DIR)/soundtouch/include \
+            -I$(EXTERNALS_DIR)/vulkan-headers/include \
             -I$(EXTERNALS_DIR)/zstd/lib
 
 SOURCES_C   :=
@@ -130,137 +134,142 @@ CXXFLAGS += -DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_SSSE3 -DCRYPTOPP_DISABLE_S
 ifeq ($(HAVE_DYNARMIC), 1)
 DEFINES += -DHAVE_DYNARMIC
 
-DYNARMICINCFLAGS := -I$(EXTERNALS_DIR)/dynarmic/src \
-                    -I$(EXTERNALS_DIR)/fmt/include \
-                    -I$(EXTERNALS_DIR)/dynarmic/externals/mp/include \
-                    -I$(EXTERNALS_DIR)/dynarmic/externals/robin-map/include
+DYNARMICINCFLAGS := -I$(EXTERNALS_DIR)/dynarmic/src/dynarmic \
+                    -I$(EXTERNALS_DIR)/dynarmic/externals/mcl/include \
+                    -I$(EXTERNALS_DIR)/fmt/include
 
-DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/common/assert.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/crypto/aes.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/crypto/crc32.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/crypto/sm4.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/fused.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPCompare.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPConvert.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPMulAdd.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPRecipEstimate.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPRecipExponent.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPRecipStepFused.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPRoundInt.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPRSqrtEstimate.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPRSqrtStepFused.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/op/FPToFixed.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/process_exception.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/process_nan.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/fp/unpacked.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/llvm_disassemble.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/math_util.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/memory_pool.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/common/u128.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/imm.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/types.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A64/types.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/basic_block.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/ir_emitter.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/location_descriptor.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/microinstruction.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/opcodes.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/type.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/ir/value.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/ir_opt/constant_propagation_pass.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/ir_opt/dead_code_elimination_pass.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/ir_opt/verification_pass.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/asimd_load_store_structures.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/asimd_one_reg_modified_immediate.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/asimd_three_same.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/asimd_two_regs_misc.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/disassembler/disassembler_arm.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/disassembler/disassembler_thumb.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/ir_emitter.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/location_descriptor.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/barrier.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/branch.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/coprocessor.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/crc32.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/data_processing.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/divide.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/exception_generating.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/extension.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/hint.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/load_store.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/misc.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/multiply.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/packing.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/parallel.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/reversal.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/saturated.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/status_register_access.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/synchronization.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/thumb16.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/thumb32.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/impl/vfp.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/translate.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/translate_arm.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/frontend/A32/translate/translate_thumb.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/ir_opt/a32_constant_memory_reads_pass.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/ir_opt/a32_merge_interpret_blocks.cpp \
-                $(EXTERNALS_DIR)/dynarmic/src/ir_opt/a32_get_set_elimination_pass.cpp
+DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/crypto/aes.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/crypto/crc32.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/crypto/sm4.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/fused.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPCompare.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPConvert.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPMulAdd.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPRecipEstimate.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPRecipExponent.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPRecipStepFused.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPRoundInt.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPRSqrtEstimate.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPRSqrtStepFused.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/op/FPToFixed.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/process_exception.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/process_nan.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/fp/unpacked.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/llvm_disassemble.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/math_util.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/memory_pool.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/common/u128.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/imm.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/a32_ir_emitter.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/a32_location_descriptor.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/a32_types.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/disassembler/disassembler_arm.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/disassembler/disassembler_thumb.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/a32_translate.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/a32_branch.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/a32_crc32.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/a32_exception_generating.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/asimd_load_store_structures.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/asimd_one_reg_modified_immediate.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/asimd_two_regs_misc.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/barrier.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/coprocessor.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/data_processing.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/divide.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/extension.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/hint.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/load_store.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/misc.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/multiply.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/packing.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/parallel.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/reversal.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/saturated.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/status_register_access.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/synchronization.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb16.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_branch.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_control.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_coprocessor.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_data_processing_modified_immediate.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_data_processing_plain_binary_immediate.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_data_processing_register.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_data_processing_shifted_register.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_load_byte.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_load_halfword.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_load_store_dual.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_load_store_multiple.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_load_word.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_long_multiply.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_misc.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_multiply.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_parallel.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/thumb32_store_single_data_item.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/impl/vfp.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/translate_arm.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A32/translate/translate_thumb.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/frontend/A64/a64_types.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/basic_block.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/ir_emitter.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/location_descriptor.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/microinstruction.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/opcodes.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/type.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/value.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/opt/a32_constant_memory_reads_pass.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/opt/constant_propagation_pass.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/opt/dead_code_elimination_pass.cpp \
+                $(EXTERNALS_DIR)/dynarmic/src/dynarmic/ir/opt/verification_pass.cpp
 
     ifeq ($(ARCH), x86_64)
         DEFINES += -DXBYAK_NO_OP_NAMES
-        DYNARMICINCFLAGS += -I$(EXTERNALS_DIR)/xbyak/xbyak
+        DYNARMICINCFLAGS += -I$(EXTERNALS_DIR)/xbyak
 
-        DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/backend/x64/abi.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/block_of_code.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/block_range_information.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/callback.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/constant_pool.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_aes.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_crc32.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_data_processing.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_floating_point.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_packed.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_saturation.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_sm4.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_vector.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_vector_floating_point.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/emit_x64_vector_saturation.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/hostloc.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/perf_map.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/reg_alloc.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/a32_emit_x64.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/a32_interface.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/backend/x64/a32_jitstate.cpp
+        DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/abi.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/block_range_information.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/block_of_code.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/callback.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/constant_pool.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_aes.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_crc32.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_data_processing.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_floating_point.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_packed.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_saturation.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_sm4.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_vector.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_vector_floating_point.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/emit_x64_vector_saturation.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/hostloc.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/perf_map.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/reg_alloc.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/a32_emit_x64.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/a32_interface.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/x64/a32_jitstate.cpp
 
         ifeq ($(platform), win)
-            DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/backend/x64/exception_handler_windows.cpp
+            DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_windows.cpp
         else ifeq ($(platform), unix)
-            DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/backend/x64/exception_handler_posix.cpp
+            DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_posix.cpp
         else
-            DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/backend/x64/exception_handler_generic.cpp
+            DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_generic.cpp
         endif
     else ifeq ($(ARCH), aarch64)
-        DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/backend/A64/callback.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/perf_map.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emit_a64_data_processing.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emit_a64_packed.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/reg_alloc.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/exception_handler_generic.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emitter \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emitter/a64_emitter.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/constant_pool.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emit_a64_saturation.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/a32_emit_a64.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/block_range_information.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/abi.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emit_a64.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/hostloc.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/block_of_code.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/emit_a64_floating_point.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/a32_interface.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/exception_handler_posix.cpp \
-                       $(EXTERNALS_DIR)/dynarmic/src/backend/A64/a32_jitstate.cpp
+        DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/a32_interface.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/a32_jitstate.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/abi.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_a32.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_data_processing.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_floating_point.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_packed.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_saturation.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/exception_handler_posix.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/reg_alloc.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/block_range_information.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_generic.cpp
     else
         $(error Bad architecture used with dynarmic: $(ARCH))
     endif
@@ -391,6 +400,7 @@ SOURCES_CXX += $(SRC_DIR)/common/detached_tasks.cpp \
                $(SRC_DIR)/common/misc.cpp \
                $(SRC_DIR)/common/param_package.cpp \
                $(SRC_DIR)/common/scm_rev.cpp \
+               $(SRC_DIR)/common/settings.cpp \
                $(SRC_DIR)/common/string_util.cpp \
                $(SRC_DIR)/common/telemetry.cpp \
                $(SRC_DIR)/common/texture.cpp \
@@ -483,7 +493,6 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/kernel/timer.cpp \
                $(SRC_DIR)/core/hle/kernel/vm_manager.cpp \
                $(SRC_DIR)/core/hle/kernel/wait_object.cpp \
-               $(SRC_DIR)/core/hle/lock.cpp \
                $(SRC_DIR)/core/hle/romfs.cpp \
                $(SRC_DIR)/core/hle/service/ac/ac.cpp \
                $(SRC_DIR)/core/hle/service/ac/ac_i.cpp \
@@ -512,6 +521,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/cam/cam_q.cpp \
                $(SRC_DIR)/core/hle/service/cam/cam_s.cpp \
                $(SRC_DIR)/core/hle/service/cam/cam_u.cpp \
+               $(SRC_DIR)/core/hle/service/cam/y2r_u.cpp \
                $(SRC_DIR)/core/hle/service/cecd/cecd.cpp \
                $(SRC_DIR)/core/hle/service/cecd/cecd_ndm.cpp \
                $(SRC_DIR)/core/hle/service/cecd/cecd_s.cpp \
@@ -527,7 +537,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/dlp/dlp_fkcl.cpp \
                $(SRC_DIR)/core/hle/service/dlp/dlp_srvr.cpp \
                $(SRC_DIR)/core/hle/service/dsp/dsp_dsp.cpp \
-               $(SRC_DIR)/core/hle/service/err_f.cpp \
+               $(SRC_DIR)/core/hle/service/err/err_f.cpp \
                $(SRC_DIR)/core/hle/service/frd/frd.cpp \
                $(SRC_DIR)/core/hle/service/frd/frd_a.cpp \
                $(SRC_DIR)/core/hle/service/frd/frd_u.cpp \
@@ -541,7 +551,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/hid/hid.cpp \
                $(SRC_DIR)/core/hle/service/hid/hid_spvr.cpp \
                $(SRC_DIR)/core/hle/service/hid/hid_user.cpp \
-               $(SRC_DIR)/core/hle/service/http_c.cpp \
+               $(SRC_DIR)/core/hle/service/http/http_c.cpp \
                $(SRC_DIR)/core/hle/service/ir/extra_hid.cpp \
                $(SRC_DIR)/core/hle/service/ir/ir.cpp \
                $(SRC_DIR)/core/hle/service/ir/ir_rst.cpp \
@@ -549,7 +559,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/ir/ir_user.cpp \
                $(SRC_DIR)/core/hle/service/ldr_ro/cro_helper.cpp \
                $(SRC_DIR)/core/hle/service/ldr_ro/ldr_ro.cpp \
-               $(SRC_DIR)/core/hle/service/mic_u.cpp \
+               $(SRC_DIR)/core/hle/service/mic/mic_u.cpp \
                $(SRC_DIR)/core/hle/service/mvd/mvd.cpp \
                $(SRC_DIR)/core/hle/service/mvd/mvd_std.cpp \
                $(SRC_DIR)/core/hle/service/ndm/ndm_u.cpp \
@@ -594,9 +604,8 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/service.cpp \
                $(SRC_DIR)/core/hle/service/sm/sm.cpp \
                $(SRC_DIR)/core/hle/service/sm/srv.cpp \
-               $(SRC_DIR)/core/hle/service/soc_u.cpp \
-               $(SRC_DIR)/core/hle/service/ssl_c.cpp \
-               $(SRC_DIR)/core/hle/service/y2r_u.cpp \
+               $(SRC_DIR)/core/hle/service/soc/soc_u.cpp \
+               $(SRC_DIR)/core/hle/service/ssl/ssl_c.cpp \
                $(SRC_DIR)/core/hw/aes/arithmetic128.cpp \
                $(SRC_DIR)/core/hw/aes/ccm.cpp \
                $(SRC_DIR)/core/hw/aes/key.cpp \
@@ -614,7 +623,6 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/movie.cpp \
                $(SRC_DIR)/core/perf_stats.cpp \
                $(SRC_DIR)/core/savestate.cpp \
-               $(SRC_DIR)/core/settings.cpp \
                $(SRC_DIR)/core/telemetry_session.cpp \
                $(SRC_DIR)/core/tracer/recorder.cpp
 
@@ -642,48 +650,30 @@ SOURCES_CXX += $(SRC_DIR)/video_core/command_processor.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_rasterizer.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_rasterizer_cache.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_resource_manager.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/gl_shader_decompiler.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_shader_disk_cache.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/gl_shader_gen.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_shader_manager.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_shader_util.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_state.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_stream_buffer.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/gl_surface_params.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_vars.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/post_processing_opengl.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/renderer_opengl.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/texture_filters/anime4k/anime4k_ultrafast.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/texture_filters/bicubic/bicubic.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/texture_filters/scale_force/scale_force.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/texture_filters/texture_filterer.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/texture_filters/xbrz/xbrz_freescale.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/gl_format_reinterpreter.cpp \
-               $(SRC_DIR)/video_core/renderer_opengl/texture_downloader_es.cpp \
                $(SRC_DIR)/video_core/shader/shader.cpp \
                $(SRC_DIR)/video_core/shader/shader_interpreter.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/clipper.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/framebuffer.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/lighting.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/proctex.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/rasterizer.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/swrasterizer.cpp \
-               $(SRC_DIR)/video_core/swrasterizer/texturing.cpp \
                $(SRC_DIR)/video_core/texture/etc1.cpp \
                $(SRC_DIR)/video_core/texture/texture_decode.cpp \
                $(SRC_DIR)/video_core/vertex_loader.cpp \
                $(SRC_DIR)/video_core/video_core.cpp
 
 ifeq ($(ARCH), x86_64)
-INCFLAGS += -I$(EXTERNALS_DIR)/xbyak/xbyak
-SOURCES_CXX += $(SRC_DIR)/video_core/shader/shader_jit_x64.cpp \
+INCFLAGS += -I$(EXTERNALS_DIR)/xbyak
+SOURCES_CXX += $(SRC_DIR)/video_core/shader/shader_jit.cpp \
                $(SRC_DIR)/video_core/shader/shader_jit_x64_compiler.cpp
 endif
 
 # Audio Core
 SOURCES_CXX += $(SRC_DIR)/audio_core/codec.cpp \
                $(SRC_DIR)/audio_core/dsp_interface.cpp \
-               $(SRC_DIR)/audio_core/hle/adts_reader.cpp \
                $(SRC_DIR)/audio_core/hle/decoder.cpp \
                $(SRC_DIR)/audio_core/hle/filter.cpp \
                $(SRC_DIR)/audio_core/hle/hle.cpp \
@@ -708,9 +698,6 @@ SOURCES_CXX += $(SRC_DIR)/network/network.cpp \
                $(SRC_DIR)/network/room_member.cpp \
                $(SRC_DIR)/network/verify_user.cpp
 
-# Citra
-SOURCES_CXX += $(SRC_DIR)/citra/lodepng_image_interface.cpp
-
 # Citra Libretro
 SOURCES_CXX += $(SRC_DIR)/citra_libretro/emu_window/libretro_window.cpp \
                $(SRC_DIR)/citra_libretro/input/input_factory.cpp \
@@ -718,7 +705,7 @@ SOURCES_CXX += $(SRC_DIR)/citra_libretro/emu_window/libretro_window.cpp \
                $(SRC_DIR)/citra_libretro/citra_libretro.cpp \
                $(SRC_DIR)/citra_libretro/environment.cpp \
                $(SRC_DIR)/citra_libretro/core_settings.cpp \
-               $(SRC_DIR)/citra_libretro/libretro_logger.cpp
+               $(SRC_DIR)/citra_libretro/vulkan/vk_swapchain.cpp
 
 SHADER_FILES += $(SRC_DIR)/video_core/host_shaders/format_reinterpreter/d24s8_to_rgba8.frag \
                 $(SRC_DIR)/video_core/host_shaders/format_reinterpreter/rgba4_to_rgb5a1.frag \

@@ -8,7 +8,7 @@ TARGET_NAME    := citra
 EXTERNALS_DIR  += ./externals
 SRC_DIR        += ./src
 LIBS		   = -lm
-DEFINES        := -DHAVE_LIBRETRO
+DEFINES        := -DHAVE_LIBRETRO -DCPPHTTPLIB_OPENSSL_SUPPORT
 
 STATIC_LINKING := 0
 AR             := ar
