@@ -212,25 +212,28 @@ std::vector<u8> System::SaveStateBuffer() const {
     oa&* this;
 
     const std::string& str{sstream.str()};
+    const auto data = std::span<const u8>{reinterpret_cast<const u8*>(str.data()), str.size()};
+    auto buffer = Common::Compression::CompressDataZSTDDefault(data);
 
     CSTHeader header{};
     header.filetype = header_magic_bytes;
     header.program_id = title_id;
     std::string rev_bytes;
-    CryptoPP::StringSource(Common::g_scm_rev, true,
-                           new CryptoPP::HexDecoder(new CryptoPP::StringSink(rev_bytes)));
+    CryptoPP::StringSource ss(Common::g_scm_rev, true,
+                              new CryptoPP::HexDecoder(new CryptoPP::StringSink(rev_bytes)));
     std::memcpy(header.revision.data(), rev_bytes.data(), sizeof(header.revision));
     header.time = std::chrono::duration_cast<std::chrono::seconds>(
                       std::chrono::system_clock::now().time_since_epoch())
                       .count();
+    const std::string build_fullname = Common::g_build_fullname;
+    std::memset(header.build_name.data(), 0, sizeof(header.build_name));
+    std::memcpy(header.build_name.data(), build_fullname.c_str(),
+                std::min(build_fullname.length(), sizeof(header.build_name) - 1));
 
-    auto compressed = Common::Compression::CompressDataZSTDDefault(
-        reinterpret_cast<const u8*>(str.data()), str.size());
+    std::vector<u8> result((u8*)&header, (u8*)&header + sizeof(header));
+    std::copy(buffer.begin(), buffer.end(), std::back_inserter(result));
 
-    std::vector<u8> buffer((u8*)&header, (u8*)&header + sizeof(header));
-    std::copy(compressed.begin(), compressed.end(), std::back_inserter(buffer));
-
-    return buffer;
+    return result;
 }
 
 bool System::LoadStateBuffer(std::vector<u8> buffer) {
