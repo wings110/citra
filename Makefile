@@ -309,7 +309,10 @@ endif
 %.o: %.c
 	$(CC) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
-$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic,$p),$p,)):
+$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/src,$p),$p,)):
+	$(CXX) $(DYNARMICFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.cpp)
+
+$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/externals/mcl,$p),$p,)):
 	$(CXX) $(DYNARMICFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.cpp)
 
 $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/externals/zy,$p),$p,)):
@@ -318,7 +321,7 @@ $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/externals/zy,
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
-%.o: %.cpp
+%.o: %.cpp externals/glslang/build/glslang/build_info.h
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 GIT_REV := $(shell git rev-parse HEAD || echo unknown)
@@ -335,6 +338,11 @@ src/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
 		-e 's/@BUILD_VERSION@/$(GIT_BRANCH)-$(GIT_DESC)/' \
 		-e 's/@BUILD_FULLNAME@//' \
 		-e 's/@SHADER_CACHE_VERSION@/$(shell sha1sum $(SHADER_CACHE_DEPENDS) | sha1sum | cut -d" " -f1)/' > $@
+
+externals/glslang/build/glslang/build_info.h: externals/glslang/build_info.h.tmpl
+	python3 externals/glslang/build_info.py externals/glslang \
+		-i externals/glslang/build_info.h.tmpl \
+		-o externals/glslang/build/glslang/build_info.h
 
 clean:
 	rm -f $(OBJECTS) $(TARGET) src/common/scm_rev.cpp

@@ -7,7 +7,10 @@ INCFLAGS := -I$(SRC_DIR) \
             -I$(EXTERNALS_DIR)/enet/include \
             -I$(EXTERNALS_DIR)/open_source_archives/include \
             -I$(EXTERNALS_DIR)/fmt/include \
+            -I$(EXTERNALS_DIR)/glslang \
+            -I$(EXTERNALS_DIR)/glslang/build \
             -I$(EXTERNALS_DIR)/httplib \
+            -I$(EXTERNALS_DIR)/json \
             -I$(EXTERNALS_DIR)/libressl/include \
             -I$(EXTERNALS_DIR)/microprofile \
             -I$(EXTERNALS_DIR)/nihstro/include \
@@ -15,7 +18,11 @@ INCFLAGS := -I$(SRC_DIR) \
             -I$(EXTERNALS_DIR)/cryptopp \
             -I$(EXTERNALS_DIR)/libretro-common/include \
             -I$(EXTERNALS_DIR)/teakra/include \
+            -I$(EXTERNALS_DIR)/sirit/include \
+            -I$(EXTERNALS_DIR)/sirit/externals/SPIRV-Headers/include \
+            -I$(EXTERNALS_DIR)/sirit/src \
             -I$(EXTERNALS_DIR)/soundtouch/include \
+            -I$(EXTERNALS_DIR)/vma/include \
             -I$(EXTERNALS_DIR)/vulkan-headers/include \
             -I$(EXTERNALS_DIR)/zstd/lib
 
@@ -332,6 +339,11 @@ endif
 # Externals - fmt
 SOURCES_CXX += $(EXTERNALS_DIR)/fmt/src/format.cc
 
+# Externals - glslang
+SOURCES_CXX += $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/ShaderLang.cpp \
+                $(EXTERNALS_DIR)/glslang/SPIRV/GlslangToSpv.cpp \
+                $(EXTERNALS_DIR)/glslang/SPIRV/Logger.cpp
+
 # Externals - lodepng
 INCFLAGS += -I$(EXTERNALS_DIR)/lodepng/lodepng
 SOURCES_CXX += $(EXTERNALS_DIR)/lodepng/lodepng/lodepng.cpp
@@ -344,6 +356,23 @@ SOURCES_CXX += $(EXTERNALS_DIR)/lodepng/lodepng/lodepng.cpp
 #               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/declaration.cpp \
 #               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/flowcontrol.cpp \
 #               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/floatop.cpp
+
+# Externals - sirit
+SOURCES_CXX += $(EXTERNALS_DIR)/sirit/src/instructions/function.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/annotation.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/arithmetic.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/bit.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/constant.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/conversion.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/debug.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/derivatives.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/flow.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/image.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/logical.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/memory.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/extension.cpp \
+                $(EXTERNALS_DIR)/sirit/src/instructions/type.cpp \
+                $(EXTERNALS_DIR)/sirit/src/sirit.cpp
 
 # Externals - SoundTouch
 SOURCES_CXX += $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/AAFilter.cpp \
@@ -426,11 +455,13 @@ endif
 
 # Common
 SOURCES_CXX += $(SRC_DIR)/common/detached_tasks.cpp \
+               $(SRC_DIR)/common/dynamic_library/dynamic_library.cpp \
                $(SRC_DIR)/common/cityhash.cpp \
                $(SRC_DIR)/common/file_util.cpp \
                $(SRC_DIR)/common/logging/backend.cpp \
                $(SRC_DIR)/common/logging/filter.cpp \
                $(SRC_DIR)/common/logging/text_formatter.cpp \
+               $(SRC_DIR)/common/memory_detect.cpp \
                $(SRC_DIR)/common/microprofile.cpp \
                $(SRC_DIR)/common/misc.cpp \
                $(SRC_DIR)/common/param_package.cpp \
@@ -496,6 +527,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/frontend/camera/interface.cpp \
                $(SRC_DIR)/core/frontend/emu_window.cpp \
                $(SRC_DIR)/core/frontend/framebuffer_layout.cpp \
+               $(SRC_DIR)/core/frontend/image_interface.cpp \
                $(SRC_DIR)/core/gdbstub/gdbstub.cpp \
                $(SRC_DIR)/core/hle/applets/applet.cpp \
                $(SRC_DIR)/core/hle/applets/erreula.cpp \
@@ -676,12 +708,24 @@ endif
 
 # Video Core
 SOURCES_CXX += $(SRC_DIR)/video_core/command_processor.cpp \
+               $(SRC_DIR)/video_core/custom_textures/custom_format.cpp \
+               $(SRC_DIR)/video_core/custom_textures/custom_tex_manager.cpp \
+               $(SRC_DIR)/video_core/custom_textures/material.cpp \
                $(SRC_DIR)/video_core/debug_utils/debug_utils.cpp \
                $(SRC_DIR)/video_core/geometry_pipeline.cpp \
                $(SRC_DIR)/video_core/pica.cpp \
                $(SRC_DIR)/video_core/primitive_assembly.cpp \
+               $(SRC_DIR)/video_core/rasterizer_accelerated.cpp \
+               $(SRC_DIR)/video_core/rasterizer_cache/pixel_format.cpp \
+               $(SRC_DIR)/video_core/rasterizer_cache/rasterizer_cache.cpp \
+               $(SRC_DIR)/video_core/rasterizer_cache/surface_base.cpp \
+               $(SRC_DIR)/video_core/rasterizer_cache/surface_params.cpp \
+               $(SRC_DIR)/video_core/rasterizer_cache/utils.cpp \
                $(SRC_DIR)/video_core/regs.cpp \
                $(SRC_DIR)/video_core/renderer_base.cpp \
+               $(SRC_DIR)/video_core/renderer_opengl/frame_dumper_opengl.cpp \
+               $(SRC_DIR)/video_core/renderer_opengl/gl_blit_helper.cpp \
+               $(SRC_DIR)/video_core/renderer_opengl/gl_driver.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_rasterizer.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_rasterizer_cache.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_resource_manager.cpp \
@@ -690,9 +734,44 @@ SOURCES_CXX += $(SRC_DIR)/video_core/command_processor.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_shader_util.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_state.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_stream_buffer.cpp \
+               $(SRC_DIR)/video_core/renderer_opengl/gl_texture_mailbox.cpp \
+               $(SRC_DIR)/video_core/renderer_opengl/gl_texture_runtime.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/gl_vars.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/post_processing_opengl.cpp \
                $(SRC_DIR)/video_core/renderer_opengl/renderer_opengl.cpp \
+               $(SRC_DIR)/video_core/renderer_software/renderer_software.cpp \
+               $(SRC_DIR)/video_core/renderer_software/sw_clipper.cpp \
+               $(SRC_DIR)/video_core/renderer_software/sw_framebuffer.cpp \
+               $(SRC_DIR)/video_core/renderer_software/sw_lighting.cpp \
+               $(SRC_DIR)/video_core/renderer_software/sw_proctex.cpp \
+               $(SRC_DIR)/video_core/renderer_software/sw_rasterizer.cpp \
+               $(SRC_DIR)/video_core/renderer_software/sw_texturing.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/renderer_vulkan.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_blit_helper.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_common.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_descriptor_pool.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_graphics_pipeline.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_instance.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_master_semaphore.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_memory_util.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_pipeline_cache.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_platform.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_present_window.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_rasterizer_cache.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_rasterizer.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_renderpass_cache.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_resource_pool.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_scheduler.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_shader_util.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_stream_buffer.cpp \
+               $(SRC_DIR)/video_core/renderer_vulkan/vk_texture_runtime.cpp \
+               $(SRC_DIR)/video_core/shader/generator/glsl_fs_shader_gen.cpp \
+               $(SRC_DIR)/video_core/shader/generator/glsl_shader_gen.cpp \
+               $(SRC_DIR)/video_core/shader/generator/glsl_shader_decompiler.cpp \
+               $(SRC_DIR)/video_core/shader/generator/pica_fs_config.cpp \
+               $(SRC_DIR)/video_core/shader/generator/shader_gen.cpp \
+               $(SRC_DIR)/video_core/shader/generator/shader_uniforms.cpp \
+               $(SRC_DIR)/video_core/shader/generator/spv_fs_shader_gen.cpp \
                $(SRC_DIR)/video_core/shader/shader.cpp \
                $(SRC_DIR)/video_core/shader/shader_interpreter.cpp \
                $(SRC_DIR)/video_core/texture/etc1.cpp \
