@@ -1,8 +1,8 @@
 INCFLAGS := -I$(SRC_DIR) \
-            -I$(SRC_DIR)/video_core \
-            -I$(SRC_DIR)/video_core/shaders/src \
+            -I$(SRC_DIR)/video_core/shaders/src1 \
             -I$(EXTERNALS_DIR) \
-            -I$(EXTERNALS_DIR)/dynarmic/include \
+            -I$(EXTERNALS_DIR)/dds-ktx \
+            -I$(EXTERNALS_DIR)/dynarmic/src \
             -I$(EXTERNALS_DIR)/enet/include \
             -I$(EXTERNALS_DIR)/open_source_archives/include \
             -I$(EXTERNALS_DIR)/fmt/include \
@@ -77,51 +77,51 @@ SOURCES_C += $(EXTERNALS_DIR)/switch-compat/src/switch-compat.c
 endif
 
 # Externals - CryptoPP
-SOURCES_CXX += $(EXTERNALS_DIR)/cryptopp/cryptopp/allocate.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/cryptlib.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/cpu.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/integer.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/algparam.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/asn.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/authenc.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/base64.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/basecode.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/ccm.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/crc_simd.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/des.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/dessp.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/dll.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/ec2n.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/ecp.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/filters.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/fips140.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/gcm_simd.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/gf2n.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/gfpcrypt.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/hex.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/hmac.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/hrtimer.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/iterhash.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/md5.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/misc.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/modes.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/mqueue.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/nbtheory.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/neon_simd.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/oaep.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/osrng.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/pubkey.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/queue.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/randpool.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/rdtables.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/rijndael_simd.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/rijndael.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/rng.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/sha_simd.cpp \
-               $(EXTERNALS_DIR)/cryptopp/cryptopp/sha.cpp
+SOURCES_CXX += $(EXTERNALS_DIR)/cryptopp/allocate.cpp \
+               $(EXTERNALS_DIR)/cryptopp/cryptlib.cpp \
+               $(EXTERNALS_DIR)/cryptopp/cpu.cpp \
+               $(EXTERNALS_DIR)/cryptopp/integer.cpp \
+               $(EXTERNALS_DIR)/cryptopp/algparam.cpp \
+               $(EXTERNALS_DIR)/cryptopp/asn.cpp \
+               $(EXTERNALS_DIR)/cryptopp/authenc.cpp \
+               $(EXTERNALS_DIR)/cryptopp/base64.cpp \
+               $(EXTERNALS_DIR)/cryptopp/basecode.cpp \
+               $(EXTERNALS_DIR)/cryptopp/ccm.cpp \
+               $(EXTERNALS_DIR)/cryptopp/crc_simd.cpp \
+               $(EXTERNALS_DIR)/cryptopp/des.cpp \
+               $(EXTERNALS_DIR)/cryptopp/dessp.cpp \
+               $(EXTERNALS_DIR)/cryptopp/dll.cpp \
+               $(EXTERNALS_DIR)/cryptopp/ec2n.cpp \
+               $(EXTERNALS_DIR)/cryptopp/ecp.cpp \
+               $(EXTERNALS_DIR)/cryptopp/filters.cpp \
+               $(EXTERNALS_DIR)/cryptopp/fips140.cpp \
+               $(EXTERNALS_DIR)/cryptopp/gcm_simd.cpp \
+               $(EXTERNALS_DIR)/cryptopp/gf2n.cpp \
+               $(EXTERNALS_DIR)/cryptopp/gfpcrypt.cpp \
+               $(EXTERNALS_DIR)/cryptopp/hex.cpp \
+               $(EXTERNALS_DIR)/cryptopp/hmac.cpp \
+               $(EXTERNALS_DIR)/cryptopp/hrtimer.cpp \
+               $(EXTERNALS_DIR)/cryptopp/iterhash.cpp \
+               $(EXTERNALS_DIR)/cryptopp/md5.cpp \
+               $(EXTERNALS_DIR)/cryptopp/misc.cpp \
+               $(EXTERNALS_DIR)/cryptopp/modes.cpp \
+               $(EXTERNALS_DIR)/cryptopp/mqueue.cpp \
+               $(EXTERNALS_DIR)/cryptopp/nbtheory.cpp \
+               $(EXTERNALS_DIR)/cryptopp/neon_simd.cpp \
+               $(EXTERNALS_DIR)/cryptopp/oaep.cpp \
+               $(EXTERNALS_DIR)/cryptopp/osrng.cpp \
+               $(EXTERNALS_DIR)/cryptopp/pubkey.cpp \
+               $(EXTERNALS_DIR)/cryptopp/queue.cpp \
+               $(EXTERNALS_DIR)/cryptopp/randpool.cpp \
+               $(EXTERNALS_DIR)/cryptopp/rdtables.cpp \
+               $(EXTERNALS_DIR)/cryptopp/rijndael_simd.cpp \
+               $(EXTERNALS_DIR)/cryptopp/rijndael.cpp \
+               $(EXTERNALS_DIR)/cryptopp/rng.cpp \
+               $(EXTERNALS_DIR)/cryptopp/sha_simd.cpp \
+               $(EXTERNALS_DIR)/cryptopp/sha.cpp
 
 ifeq ($(HAVE_SSE), 1)
-SOURCES_CXX += $(EXTERNALS_DIR)/cryptopp/cryptopp/sse_simd.cpp
+SOURCES_CXX += $(EXTERNALS_DIR)/cryptopp/sse_simd.cpp
 endif
 
 CXXFLAGS += -DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_SSSE3 -DCRYPTOPP_DISABLE_SSE4
@@ -294,29 +294,29 @@ INCFLAGS += -I$(EXTERNALS_DIR)/lodepng/lodepng
 SOURCES_CXX += $(EXTERNALS_DIR)/lodepng/lodepng/lodepng.cpp
 
 # Externals - nihstro
-SOURCES_CXX += $(EXTERNALS_DIR)/nihstro/src/parser_assembly.cpp \
-               $(EXTERNALS_DIR)/nihstro/src/preprocessor.cpp \
-               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/common.cpp \
-               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/compare.cpp \
-               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/declaration.cpp \
-               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/flowcontrol.cpp \
-               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/floatop.cpp
+#SOURCES_CXX += $(EXTERNALS_DIR)/nihstro/src/parser_assembly.cpp \
+#               $(EXTERNALS_DIR)/nihstro/src/preprocessor.cpp \
+#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/common.cpp \
+#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/compare.cpp \
+#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/declaration.cpp \
+#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/flowcontrol.cpp \
+#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/floatop.cpp
 
 # Externals - SoundTouch
-SOURCES_CXX += $(EXTERNALS_DIR)/soundtouch/src/AAFilter.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/BPMDetect.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/cpu_detect_x86.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/FIFOSampleBuffer.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/FIRFilter.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/InterpolateCubic.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/InterpolateLinear.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/InterpolateShannon.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/mmx_optimized.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/PeakFinder.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/RateTransposer.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/SoundTouch.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/sse_optimized.cpp \
-               $(EXTERNALS_DIR)/soundtouch/src/TDStretch.cpp
+SOURCES_CXX += $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/AAFilter.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/BPMDetect.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/cpu_detect_x86.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/FIFOSampleBuffer.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/FIRFilter.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/InterpolateCubic.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/InterpolateLinear.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/InterpolateShannon.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/mmx_optimized.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/PeakFinder.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/RateTransposer.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/SoundTouch.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/sse_optimized.cpp \
+               $(EXTERNALS_DIR)/soundtouch/source/SoundTouch/TDStretch.cpp
 
 # Externals - Teakra
 SOURCES_CXX += $(EXTERNALS_DIR)/teakra/src/ahbm.cpp \
@@ -403,8 +403,7 @@ SOURCES_CXX += $(SRC_DIR)/common/x64/cpu_detect.cpp
 endif
 
 # Core
-SOURCES_CXX += $(SRC_DIR)/core/announce_multiplayer_session.cpp \
-               $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
+SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/arm/dyncom/arm_dyncom_dec.cpp \
                $(SRC_DIR)/core/arm/dyncom/arm_dyncom_interpreter.cpp \
                $(SRC_DIR)/core/arm/dyncom/arm_dyncom_thumb.cpp \
@@ -420,7 +419,6 @@ SOURCES_CXX += $(SRC_DIR)/core/announce_multiplayer_session.cpp \
                $(SRC_DIR)/core/cheats/gateway_cheat.cpp \
                $(SRC_DIR)/core/core.cpp \
                $(SRC_DIR)/core/core_timing.cpp \
-               $(SRC_DIR)/core/custom_tex_cache.cpp \
                $(SRC_DIR)/core/dumping/backend.cpp \
                $(SRC_DIR)/core/file_sys/archive_backend.cpp \
                $(SRC_DIR)/core/file_sys/archive_extsavedata.cpp \
@@ -453,7 +451,6 @@ SOURCES_CXX += $(SRC_DIR)/core/announce_multiplayer_session.cpp \
                $(SRC_DIR)/core/frontend/camera/interface.cpp \
                $(SRC_DIR)/core/frontend/emu_window.cpp \
                $(SRC_DIR)/core/frontend/framebuffer_layout.cpp \
-               $(SRC_DIR)/core/frontend/mic.cpp \
                $(SRC_DIR)/core/gdbstub/gdbstub.cpp \
                $(SRC_DIR)/core/hle/applets/applet.cpp \
                $(SRC_DIR)/core/hle/applets/erreula.cpp \
@@ -744,3 +741,37 @@ SHADER_FILES += $(SRC_DIR)/video_core/host_shaders/format_reinterpreter/d24s8_to
                 $(SRC_DIR)/video_core/host_shaders/vulkan_present_anaglyph.frag \
                 $(SRC_DIR)/video_core/host_shaders/vulkan_present_interlaced.frag \
                 $(SRC_DIR)/video_core/host_shaders/vulkan_blit_depth_stencil.frag
+
+# Shader cache version depends (see CMakeModules/GenerateSCMRev)
+SHADER_CACHE_DEPENDS =  ${SRC_DIR}/video_core/renderer_opengl/gl_shader_disk_cache.cpp \
+                        ${SRC_DIR}/video_core/renderer_opengl/gl_shader_disk_cache.h \
+                        ${SRC_DIR}/video_core/renderer_opengl/gl_shader_util.cpp \
+                        ${SRC_DIR}/video_core/renderer_opengl/gl_shader_util.h \
+                        ${SRC_DIR}/video_core/renderer_vulkan/vk_shader_util.cpp \
+                        ${SRC_DIR}/video_core/renderer_vulkan/vk_shader_util.h \
+                        ${SRC_DIR}/video_core/shader/generator/glsl_fs_shader_gen.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/glsl_fs_shader_gen.h \
+                        ${SRC_DIR}/video_core/shader/generator/glsl_shader_decompiler.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/glsl_shader_decompiler.h \
+                        ${SRC_DIR}/video_core/shader/generator/glsl_shader_gen.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/glsl_shader_gen.h \
+                        ${SRC_DIR}/video_core/shader/generator/pica_fs_config.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/pica_fs_config.h \
+                        ${SRC_DIR}/video_core/shader/generator/shader_gen.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/shader_gen.h \
+                        ${SRC_DIR}/video_core/shader/generator/shader_uniforms.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/shader_uniforms.h \
+                        ${SRC_DIR}/video_core/shader/generator/spv_fs_shader_gen.cpp \
+                        ${SRC_DIR}/video_core/shader/generator/spv_fs_shader_gen.h \
+                        ${SRC_DIR}/video_core/shader/shader.cpp \
+                        ${SRC_DIR}/video_core/shader/shader.h \
+                        ${SRC_DIR}/video_core/pica.cpp \
+                        ${SRC_DIR}/video_core/pica.h \
+                        ${SRC_DIR}/video_core/regs_framebuffer.h \
+                        ${SRC_DIR}/video_core/regs_lighting.h \
+                        ${SRC_DIR}/video_core/regs_pipeline.h \
+                        ${SRC_DIR}/video_core/regs_rasterizer.h \
+                        ${SRC_DIR}/video_core/regs_shader.h \
+                        ${SRC_DIR}/video_core/regs_texturing.h \
+                        ${SRC_DIR}/video_core/regs.cpp \
+                        ${SRC_DIR}/video_core/regs.h

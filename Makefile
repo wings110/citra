@@ -71,20 +71,6 @@ ifeq ($(STATIC_LINKING), 1)
 EXT := a
 endif
 
-GIT_REV := "$(shell git rev-parse HEAD || echo unknown)"
-GIT_BRANCH := "$(shell git rev-parse --abbrev-ref HEAD || echo unknown)"
-GIT_DESC := "$(shell git describe --always --long --dirty || echo unknown)"
-BUILD_DATE := "$(shell date +'%d/%m/%Y_%H:%M')"
-
-DEFINES += -DGIT_REV=\"$(GIT_REV)\" \
-		   -DGIT_BRANCH=\"$(GIT_BRANCH)\" \
-		   -DGIT_DESC=\"$(GIT_DESC)\" \
-		   -DBUILD_NAME=\"citra-libretro\" \
-		   -DBUILD_DATE=\"$(BUILD_DATE)\" \
-		   -DBUILD_VERSION=\"$(GIT_BRANCH)-$(GIT_DESC)\" \
-		   -DBUILD_FULLNAME=\"\" \
-		   -DSHADER_CACHE_VERSION=\"0\"
-
 ifeq ($(platform), unix)
 	EXT ?= so
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
@@ -269,7 +255,7 @@ CCFILES = $(filter %.cc,$(SOURCES_CXX))
 OBJECTS := $(SOURCES_C:.c=.o) $(CPPFILES:.cpp=.o) $(CCFILES:.cc=.o)
 
 ifeq (,$(findstring msvc,$(platform)))
-	CXXFLAGS += -std=c++17
+	CXXFLAGS += -std=c++20
 else
 	CXXFLAGS += -std:c++latest
 endif
@@ -331,8 +317,23 @@ $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/src,$p),$p,))
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
+GIT_REV := $(shell git rev-parse HEAD || echo unknown)
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD || echo unknown)
+GIT_DESC := $(shell git describe --always --long --dirty || echo unknown)
+BUILD_DATE := $(shell date +'%Y-%m-%d_%H:%M%z')
+
+src/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
+	cat src/common/scm_rev.cpp.in | sed -e 's/@GIT_REV@/$(GIT_REV)/' \
+		-e 's/@GIT_BRANCH@/$(GIT_BRANCH)/' \
+		-e 's/@GIT_DESC@/$(GIT_DESC)/' \
+		-e 's/@REPO_NAME@/citra-libretro/' \
+		-e 's/@BUILD_DATE@/$(BUILD_DATE)/' \
+		-e 's/@BUILD_VERSION@/$(GIT_BRANCH)-$(GIT_DESC)/' \
+		-e 's/@BUILD_FULLNAME@//' \
+		-e 's/@SHADER_CACHE_VERSION@/$(shell sha1sum $(SHADER_CACHE_DEPENDS) | sha1sum | cut -d" " -f1)/' > $@
+
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) src/common/scm_rev.cpp
 	rm -rf $(SRC_DIR)/video_core/shaders
 
 GLSLANG := glslang
@@ -366,4 +367,4 @@ shaders: $(SHADER_FILES)
 	done
 
 
-.PHONY: clean
+.PHONY: clean shaders

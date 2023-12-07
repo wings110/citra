@@ -88,7 +88,7 @@ public:
             log_level = retro_log_level::RETRO_LOG_ERROR;
             break;
         default:
-            UNREACHABLE();
+            log_level = retro_log_level::RETRO_LOG_DUMMY;
         }
 
         auto str = FormatLogMessage(entry).append(1, '\n');
