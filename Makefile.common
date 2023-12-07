@@ -279,11 +279,6 @@ SOURCES_C += $(EXTERNALS_DIR)/enet/callbacks.c \
 
 CFLAGS += -DHAS_SOCKLEN_T
 
-## Externals - FFMPEG (static)
-ifeq ($(HAVE_FFMPEG_STATIC), 1)
-INCFLAGS += -I$(EXTERNALS_DIR)/ffmpeg
-endif
-
 # Externals - glad
 ifeq ($(HAVE_GLAD), 1)
 DEFINES += -DHAVE_GLAD
@@ -702,12 +697,6 @@ SOURCES_CXX += $(SRC_DIR)/audio_core/codec.cpp \
                $(SRC_DIR)/audio_core/sink_details.cpp \
                $(SRC_DIR)/audio_core/time_stretch.cpp \
                $(SRC_DIR)/audio_core/libretro_sink.cpp
-
-ifeq ($(HAVE_FFMPEG), 1)
-DEFINES += -DHAVE_FFMPEG
-SOURCES_CXX += $(SRC_DIR)/audio_core/hle/ffmpeg_decoder.cpp \
-               $(SRC_DIR)/audio_core/hle/ffmpeg_dl.cpp
-endif
 
 ifeq ($(HAVE_MF), 1)
 DEFINES += -DHAVE_MF
