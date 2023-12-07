@@ -8,7 +8,7 @@ TARGET_NAME    := citra
 EXTERNALS_DIR  += ./externals
 SRC_DIR        += ./src
 LIBS		   = -lm
-DEFINES        := -DHAVE_LIBRETRO -DCPPHTTPLIB_OPENSSL_SUPPORT
+DEFINES        := -DHAVE_LIBRETRO
 
 STATIC_LINKING := 0
 AR             := ar
@@ -247,6 +247,7 @@ endif
 
 include Makefile.common
 
+SOURCES_C += $(DYNARMICSOURCES_C)
 SOURCES_CXX += $(DYNARMICSOURCES_CXX)
 
 CPPFILES = $(filter %.cpp,$(SOURCES_CXX))
@@ -308,8 +309,11 @@ endif
 %.o: %.c
 	$(CC) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
-$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/src,$p),$p,)):
+$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic,$p),$p,)):
 	$(CXX) $(DYNARMICFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.cpp)
+
+$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/externals/zy,$p),$p,)):
+	$(CC) $(CFLAGS) $(DYNARMICINCFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.c)
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
