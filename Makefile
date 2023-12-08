@@ -306,9 +306,6 @@ else
 	$(LD) $(fpic) $(SHARED) $(INCLUDES) $(LINKOUT)$@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 endif
 
-%.o: %.c
-	$(CC) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
-
 $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/src,$p),$p,)):
 	$(CXX) $(DYNARMICFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.cpp)
 
@@ -317,6 +314,15 @@ $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/externals/mcl
 
 $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/dynarmic/externals/zy,$p),$p,)):
 	$(CC) $(CFLAGS) $(DYNARMICINCFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.c)
+
+$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/faad2,$p),$p,)):
+	$(CC) $(CFLAGS) $(FAAD2FLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.c)
+
+$(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/libressl,$p),$p,)):
+	$(CC) $(LIBRESSLFLAGS) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $(@:.o=.c)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
@@ -339,7 +345,7 @@ src/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
 		-e 's/@BUILD_FULLNAME@//' \
 		-e 's/@SHADER_CACHE_VERSION@/$(shell sha1sum $(SHADER_CACHE_DEPENDS) | sha1sum | cut -d" " -f1)/' > $@
 
-externals/glslang/build/glslang/build_info.h: externals/glslang/build_info.h.tmpl
+externals/glslang/build/glslang/build_info.h: externals/glslang/build_info.h.tmpl externals/glslang/CHANGES.md
 	python3 externals/glslang/build_info.py externals/glslang \
 		-i externals/glslang/build_info.h.tmpl \
 		-o externals/glslang/build/glslang/build_info.h

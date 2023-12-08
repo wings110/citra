@@ -5,7 +5,7 @@ INCFLAGS := -I$(SRC_DIR) \
             -I$(EXTERNALS_DIR)/dynarmic/externals/robin-map/include \
             -I$(EXTERNALS_DIR)/dynarmic/src \
             -I$(EXTERNALS_DIR)/enet/include \
-            -I$(EXTERNALS_DIR)/open_source_archives/include \
+            -I$(EXTERNALS_DIR)/faad2/faad2/include \
             -I$(EXTERNALS_DIR)/fmt/include \
             -I$(EXTERNALS_DIR)/glslang \
             -I$(EXTERNALS_DIR)/glslang/build \
@@ -17,6 +17,7 @@ INCFLAGS := -I$(SRC_DIR) \
             -I$(EXTERNALS_DIR)/boost \
             -I$(EXTERNALS_DIR)/cryptopp \
             -I$(EXTERNALS_DIR)/libretro-common/include \
+            -I$(EXTERNALS_DIR)/open_source_archives/include \
             -I$(EXTERNALS_DIR)/teakra/include \
             -I$(EXTERNALS_DIR)/sirit/include \
             -I$(EXTERNALS_DIR)/sirit/externals/SPIRV-Headers/include \
@@ -35,7 +36,8 @@ CXXFLAGS += -DCPPHTTPLIB_OPENSSL_SUPPORT
 CXXFLAGS += -DBOOST_ERROR_CODE_HEADER_ONLY -DBOOST_SYSTEM_NO_LIB -DBOOST_DATE_TIME_NO_LIB -DBOOST_REGEX_NO_LIB \
     -DNULL_POINTER_TAG=BOOST_SERIALIZATION_NULL_POINTER_TAG # Stupid workaround for boost serialization
 
-SOURCES_CXX +=  $(EXTERNALS_DIR)/boost/libs/serialization/src/archive_exception.cpp \
+SOURCES_CXX +=  $(EXTERNALS_DIR)/boost/libs/iostreams/src/file_descriptor.cpp \
+                $(EXTERNALS_DIR)/boost/libs/serialization/src/archive_exception.cpp \
                 $(EXTERNALS_DIR)/boost/libs/serialization/src/basic_pointer_oserializer.cpp \
                 $(EXTERNALS_DIR)/boost/libs/serialization/src/extended_type_info_no_rtti.cpp \
                 $(EXTERNALS_DIR)/boost/libs/serialization/src/polymorphic_text_oarchive.cpp \
@@ -124,6 +126,7 @@ SOURCES_CXX += $(EXTERNALS_DIR)/cryptopp/allocate.cpp \
                $(EXTERNALS_DIR)/cryptopp/oaep.cpp \
                $(EXTERNALS_DIR)/cryptopp/osrng.cpp \
                $(EXTERNALS_DIR)/cryptopp/pubkey.cpp \
+               $(EXTERNALS_DIR)/cryptopp/primetab.cpp \
                $(EXTERNALS_DIR)/cryptopp/queue.cpp \
                $(EXTERNALS_DIR)/cryptopp/randpool.cpp \
                $(EXTERNALS_DIR)/cryptopp/rdtables.cpp \
@@ -336,26 +339,724 @@ INCFLAGS += -I$(EXTERNALS_DIR)/glad/include
 SOURCES_C += $(EXTERNALS_DIR)/glad/src/glad.c
 endif
 
+# Externals - faad2
+FAAD2_VERSION := '"$(shell cat $(EXTERNALS_DIR)/faad2/faad2/properties.json | grep 'PACKAGE_VERSION' | cut -d'"' -f4)"'
+FAAD2FLAGS := -DLC_ONLY_DECODER -DDISABLE_SBR -DPACKAGE_VERSION=$(FAAD2_VERSION) \
+    -DAPPLY_DRC -DHAVE_INTTYPES_H=1 -DHAVE_MEMCPY=1 -DHAVE_STRING_H=1 -DHAVE_STRINGS_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_SYS_TYPES_H=1 -DSTDC_HEADERS=1 \
+    -I$(EXTERNALS_DIR)/faad2/faad2/libfaad
+SOURCES_C += $(EXTERNALS_DIR)/faad2/faad2/libfaad/bits.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/cfft.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/common.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/decoder.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/drc.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/error.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/filtbank.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/huffman.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/is.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/mdct.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/mp4.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/ms.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/output.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/pns.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/pulse.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/specrec.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/syntax.c \
+            $(EXTERNALS_DIR)/faad2/faad2/libfaad/tns.c
+
 # Externals - fmt
 SOURCES_CXX += $(EXTERNALS_DIR)/fmt/src/format.cc
 
 # Externals - glslang
-SOURCES_CXX += $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/ShaderLang.cpp \
+SOURCES_CXX +=  $(EXTERNALS_DIR)/glslang/glslang/GenericCodeGen/CodeGen.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/GenericCodeGen/Link.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/attribute.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/Constant.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/glslang_tab.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/Initialize.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/InfoSink.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/Intermediate.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/intermOut.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/IntermTraverse.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/iomapper.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/limits.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/linkValidate.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/ParseContextBase.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/parseConst.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/ParseHelper.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/PoolAlloc.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/preprocessor/Pp.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/preprocessor/PpAtom.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/preprocessor/PpContext.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/preprocessor/PpScanner.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/preprocessor/PpTokens.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/propagateNoContraction.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/reflection.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/RemoveTree.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/Scan.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/ShaderLang.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/SpirvIntrinsics.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/SymbolTable.cpp \
+                $(EXTERNALS_DIR)/glslang/glslang/MachineIndependent/Versions.cpp \
+                $(EXTERNALS_DIR)/glslang/OGLCompilersDLL/InitializeDll.cpp \
                 $(EXTERNALS_DIR)/glslang/SPIRV/GlslangToSpv.cpp \
-                $(EXTERNALS_DIR)/glslang/SPIRV/Logger.cpp
+                $(EXTERNALS_DIR)/glslang/SPIRV/InReadableOrder.cpp \
+                $(EXTERNALS_DIR)/glslang/SPIRV/Logger.cpp \
+                $(EXTERNALS_DIR)/glslang/SPIRV/SpvBuilder.cpp \
+                $(EXTERNALS_DIR)/glslang/SPIRV/SpvPostProcess.cpp
+ifeq ($(platform), win)
+    SOURCES_CXX += $(EXTERNALS_DIR)/glslang/glslang/OSDependent/Windows/ossource.cpp
+else ifeq ($(platform), unix)
+    SOURCES_CXX += $(EXTERNALS_DIR)/glslang/glslang/OSDependent/Unix/ossource.cpp
+endif
+
+# Externals - libressl
+LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/include/compat \
+                -I$(EXTERNALS_DIR)/libressl/crypto \
+                -I$(EXTERNALS_DIR)/libressl/crypto/asn1 \
+                -I$(EXTERNALS_DIR)/libressl/crypto/bio \
+                -I$(EXTERNALS_DIR)/libressl/crypto/bn \
+                -I$(EXTERNALS_DIR)/libressl/crypto/bytestring \
+                -I$(EXTERNALS_DIR)/libressl/crypto/dh \
+                -I$(EXTERNALS_DIR)/libressl/crypto/dsa \
+                -I$(EXTERNALS_DIR)/libressl/crypto/curve25519 \
+                -I$(EXTERNALS_DIR)/libressl/crypto/ec \
+                -I$(EXTERNALS_DIR)/libressl/crypto/ecdh \
+                -I$(EXTERNALS_DIR)/libressl/crypto/ecdsa \
+                -I$(EXTERNALS_DIR)/libressl/crypto/evp \
+                -I$(EXTERNALS_DIR)/libressl/crypto/hidden \
+                -I$(EXTERNALS_DIR)/libressl/crypto/hmac \
+                -I$(EXTERNALS_DIR)/libressl/crypto/modes \
+                -I$(EXTERNALS_DIR)/libressl/crypto/ocsp \
+                -I$(EXTERNALS_DIR)/libressl/crypto/pkcs12 \
+                -I$(EXTERNALS_DIR)/libressl/crypto/rsa \
+                -I$(EXTERNALS_DIR)/libressl/crypto/sha \
+                -I$(EXTERNALS_DIR)/libressl/crypto/x509 \
+                -DLIBRESSL_INTERNAL -DOPENSSL_NO_HW_PADLOCK -D__BEGIN_HIDDEN_DECLS= -D__END_HIDDEN_DECLS= \
+                -DLIBRESSL_CRYPTO_INTERNAL -DHAVE_ENDIAN_H -DOPENSSL_NO_ASM
+ifeq ($(ARCH), x86_64)
+    LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/amd64
+else ifeq ($(ARCH), aarch64)
+    LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/aarch64
+else
+    $(error Bad architecture used with libressl: $(ARCH))
+endif
+ifeq ($(platform), win)
+    SOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/compat/crypto_lock_win.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/getprogname_windows.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/posix_win.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/b_win.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_log.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ui/ui_openssl_win.c
+else ifeq ($(platform), unix)
+    SOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/crypto_lock.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/getprogname_unimpl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/b_posix.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_log.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ui/ui_openssl.c
+endif
+SOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/compat/freezero.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/recallocarray.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/strtonum.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/syslog_r.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/timingsafe_bcmp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/compat/timingsafe_memcmp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cpt_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cryptlib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/crypto_init.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cversion.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ex_data.c \
+            $(EXTERNALS_DIR)/libressl/crypto/malloc-wrapper.c \
+            $(EXTERNALS_DIR)/libressl/crypto/mem_clr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/mem_dbg.c \
+            $(EXTERNALS_DIR)/libressl/crypto/o_fips.c \
+            $(EXTERNALS_DIR)/libressl/crypto/o_init.c \
+            $(EXTERNALS_DIR)/libressl/crypto/o_str.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_cfb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_ctr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_ecb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_ige.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_misc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_ofb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_wrap.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_bitstr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_enum.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_int.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_mbstr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_object.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_octet.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_print.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_pubkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_strex.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_string.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_strnid.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_time.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_time_posix.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_time_tm.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_type.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/a_utf8.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/ameth_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_gen.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_item.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_old.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_old_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_par.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn1_types.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn_mime.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/asn_moid.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/bio_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/bio_ndef.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/p5_pbe.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/p5_pbev2.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/p8_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/t_crl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/t_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/t_req.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/t_spki.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/t_x509.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/t_x509a.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_dec.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_fre.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_new.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_typ.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/tasn_utl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_algor.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_attrib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_bignum.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_crl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_exten.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_info.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_long.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_name.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_pubkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_req.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_sig.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_spki.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_val.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_x509.c \
+            $(EXTERNALS_DIR)/libressl/crypto/asn1/x_x509a.c \
+            $(EXTERNALS_DIR)/libressl/crypto/stack/stack.c \
+            $(EXTERNALS_DIR)/libressl/crypto/objects/obj_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/objects/obj_dat.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_akeya.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_genn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_obj.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bf/bf_cfb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bf/bf_ecb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bf/bf_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bf/bf_ofb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bf/bf_skey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/b_dump.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/b_print.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/b_sock.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bf_buff.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bf_nbio.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bf_null.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bio_cb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bio_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bio_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bio_meth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_acpt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_bio.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_conn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_dgram.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_fd.c \
+            $(EXTERNALS_DIR)/libressl/crypto/err/err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/lhash/lhash.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_file.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_null.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_sock.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_add.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_blind.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_bpsw.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_const.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_convert.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_ctx.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_div.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_exp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_gcd.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_isqrt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_kron.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_mod.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_mod_sqrt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_mont.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_mul.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_prime.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_rand.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_recp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_shift.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_small_primes.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_sqr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bn/bn_word.c \
+            $(EXTERNALS_DIR)/libressl/crypto/buffer/buf_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/buffer/buf_str.c \
+            $(EXTERNALS_DIR)/libressl/crypto/buffer/buffer.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bio/bss_mem.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bytestring/bs_ber.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bytestring/bs_cbb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/bytestring/bs_cbs.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/cmll_cfb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/cmll_ctr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/cmll_ecb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/cmll_misc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/cmll_ofb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cast/c_cfb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cast/c_ecb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cast/c_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cast/c_ofb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cast/c_skey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/chacha/chacha.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cmac/cm_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cmac/cm_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cmac/cmac.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_att.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_cd.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_dd.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_env.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_ess.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_io.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_kari.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_pwri.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_sd.c \
+            $(EXTERNALS_DIR)/libressl/crypto/cms/cms_smime.c \
+            $(EXTERNALS_DIR)/libressl/crypto/comp/c_rle.c \
+            $(EXTERNALS_DIR)/libressl/crypto/comp/c_zlib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/comp/comp_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/comp/comp_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_api.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_def.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_mall.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_mod.c \
+            $(EXTERNALS_DIR)/libressl/crypto/conf/conf_sap.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_b64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_log.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_oct.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_policy.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_sct.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_sct_ctx.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_vfy.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ct/ct_x509v3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/curve25519/curve25519-generic.c \
+            $(EXTERNALS_DIR)/libressl/crypto/curve25519/curve25519.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/cbc_cksm.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/cbc_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/cfb64ede.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/cfb64enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/cfb_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/des_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/ecb3_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/ecb_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/ede_cbcm_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/enc_read.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/enc_writ.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/fcrypt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/fcrypt_b.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/ofb64ede.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/ofb64enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/ofb_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/pcbc_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/qud_cksm.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/rand_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/set_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/str2key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/des/xcbc_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_check.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_gen.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dh/dh_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_gen.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_meth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_ossl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dsa/dsa_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dso/dso_dlfcn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dso/dso_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dso/dso_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dso/dso_null.c \
+            $(EXTERNALS_DIR)/libressl/crypto/dso/dso_openssl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_check.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_curve.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_cvt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_kmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_mult.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_oct.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ec_print.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/eck_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ecp_mont.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ecp_oct.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ecp_smpl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ec/ecx_methods.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdh/ecdh_kdf.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdh/ech_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdh/ech_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdh/ech_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdsa/ecs_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdsa/ecs_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdsa/ecs_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ecdsa/ecs_ossl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_all.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_cnf.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_ctrl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_dyn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_fat.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_init.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_list.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_openssl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/eng_table.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_asnmth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_cipher.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_dh.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_digest.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_dsa.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_ecdh.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_ecdsa.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_eckey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_pkmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_rand.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_rsa.c \
+            $(EXTERNALS_DIR)/libressl/crypto/engine/tb_store.c \
+            $(EXTERNALS_DIR)/libressl/crypto/err/err_all.c \
+            $(EXTERNALS_DIR)/libressl/crypto/err/err_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/bio_b64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/bio_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/bio_md.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/c_all.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/cipher_method_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/digest.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_aes.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_aes_cbc_hmac_sha1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_bf.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_camellia.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_cast.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_chacha.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_chacha20poly1305.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_des.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_des3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_gost2814789.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_idea.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_null.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_rc2.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_rc4.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_rc4_hmac_md5.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_sm4.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/e_xcbc_d.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/encode.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_aead.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_pbe.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/evp_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_gost2814789.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_gostr341194.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_md4.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_md5.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_md5_sha1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_null.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_ripemd.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_sha1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_sha3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_sigver.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_streebog.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_sm3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/m_wp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/names.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p5_crpt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p5_crpt2.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_dec.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_open.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_seal.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_sign.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/p_verify.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/pmeth_fn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/pmeth_gn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/evp/pmeth_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost2814789.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost89_keywrap.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost89_params.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost89imit_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost89imit_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gost_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gostr341001.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gostr341001_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gostr341001_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gostr341001_params.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gostr341001_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/gostr341194.c \
+            $(EXTERNALS_DIR)/libressl/crypto/gost/streebog.c \
+            $(EXTERNALS_DIR)/libressl/crypto/hkdf/hkdf.c \
+            $(EXTERNALS_DIR)/libressl/crypto/hmac/hm_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/hmac/hm_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/hmac/hmac.c \
+            $(EXTERNALS_DIR)/libressl/crypto/idea/i_cbc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/idea/i_cfb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/idea/i_ecb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/idea/i_ofb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/idea/i_skey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/kdf/hkdf_evp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/kdf/kdf_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/lhash/lh_stats.c \
+            $(EXTERNALS_DIR)/libressl/crypto/md4/md4_dgst.c \
+            $(EXTERNALS_DIR)/libressl/crypto/md4/md4_one.c \
+            $(EXTERNALS_DIR)/libressl/crypto/md5/md5_dgst.c \
+            $(EXTERNALS_DIR)/libressl/crypto/md5/md5_one.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/cbc128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/ccm128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/cfb128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/ctr128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/gcm128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/ofb128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/modes/xts128.c \
+            $(EXTERNALS_DIR)/libressl/crypto/objects/o_names.c \
+            $(EXTERNALS_DIR)/libressl/crypto/objects/obj_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/objects/obj_xref.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_asn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_cl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_ext.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_ht.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_srv.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ocsp/ocsp_vfy.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_all.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_info.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_oth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_pk8.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_pkey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_sign.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_x509.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pem_xaux.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pem/pvkfmt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_add.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_asn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_attr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_crpt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_crt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_decr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_init.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_key.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_kiss.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_mutl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_npas.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_p8d.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_p8e.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_sbag.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/p12_utl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs12/pk12err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pk7_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pk7_attr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pk7_doit.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pk7_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pk7_mime.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pk7_smime.c \
+            $(EXTERNALS_DIR)/libressl/crypto/pkcs7/pkcs7err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/poly1305/poly1305.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rand/rand_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rand/rand_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rand/randfile.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc2/rc2_cbc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc2/rc2_ecb.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc2/rc2_skey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc2/rc2cfb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc2/rc2ofb64.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ripemd/rmd_dgst.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ripemd/rmd_one.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_ameth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_chk.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_crpt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_eay.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_gen.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_meth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_none.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_oaep.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_pk1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_pmeth.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_pss.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_saos.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_sign.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rsa/rsa_x931.c \
+            $(EXTERNALS_DIR)/libressl/crypto/sha/sha1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/sha/sha256.c \
+            $(EXTERNALS_DIR)/libressl/crypto/sha/sha3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/sha/sha512.c \
+            $(EXTERNALS_DIR)/libressl/crypto/sm3/sm3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/sm4/sm4.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_asn1.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_conf.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_req_print.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_req_utils.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_rsp_print.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_rsp_sign.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_rsp_utils.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_rsp_verify.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ts/ts_verify_ctx.c \
+            $(EXTERNALS_DIR)/libressl/crypto/txt_db/txt_db.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ui/ui_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ui/ui_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ui/ui_null.c \
+            $(EXTERNALS_DIR)/libressl/crypto/ui/ui_util.c \
+            $(EXTERNALS_DIR)/libressl/crypto/whrlpool/wp_dgst.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/by_dir.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/by_file.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/by_mem.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_addr.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_akey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_alt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_asid.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_att.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_bcons.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_bitst.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_cmp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_conf.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_constraints.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_cpols.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_crld.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_d2.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_def.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_err.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_ext.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_extku.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_ia5.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_info.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_int.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_issuer_cache.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_lib.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_lu.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_ncons.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_ocsp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_pcons.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_pku.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_pmaps.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_policy.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_prn.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_purp.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_r2x.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_req.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_set.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_skey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_trs.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_txt.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_utl.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_v3.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_verify.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_vfy.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509_vpm.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509cset.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509name.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509rset.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509spki.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x509type.c \
+            $(EXTERNALS_DIR)/libressl/crypto/x509/x_all.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_cbc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/aes/aes_core.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/camellia.c \
+            $(EXTERNALS_DIR)/libressl/crypto/camellia/cmll_cbc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc4/rc4_enc.c \
+            $(EXTERNALS_DIR)/libressl/crypto/rc4/rc4_skey.c \
+            $(EXTERNALS_DIR)/libressl/crypto/whrlpool/wp_block.c \
+            $(EXTERNALS_DIR)/libressl/ssl/bio_ssl.c \
+            $(EXTERNALS_DIR)/libressl/ssl/d1_both.c \
+            $(EXTERNALS_DIR)/libressl/ssl/d1_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/d1_pkt.c \
+            $(EXTERNALS_DIR)/libressl/ssl/d1_srtp.c \
+            $(EXTERNALS_DIR)/libressl/ssl/pqueue.c \
+            $(EXTERNALS_DIR)/libressl/ssl/s3_cbc.c \
+            $(EXTERNALS_DIR)/libressl/ssl/s3_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_algs.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_asn1.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_both.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_cert.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_ciph.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_ciphers.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_clnt.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_err.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_init.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_kex.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_methods.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_packet.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_pkt.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_rsa.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_seclevel.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_sess.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_sigalgs.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_srvr.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_stat.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_tlsext.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_transcript.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_txt.c \
+            $(EXTERNALS_DIR)/libressl/ssl/ssl_versions.c \
+            $(EXTERNALS_DIR)/libressl/ssl/t1_enc.c \
+            $(EXTERNALS_DIR)/libressl/ssl/t1_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls_buffer.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls_content.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls_key_share.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls12_key_schedule.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls12_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls12_record_layer.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_client.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_error.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_handshake.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_handshake_msg.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_key_schedule.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_legacy.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_lib.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_quic.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_record.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_record_layer.c \
+            $(EXTERNALS_DIR)/libressl/ssl/tls13_server.c
+
 
 # Externals - lodepng
 INCFLAGS += -I$(EXTERNALS_DIR)/lodepng/lodepng
 SOURCES_CXX += $(EXTERNALS_DIR)/lodepng/lodepng/lodepng.cpp
-
-# Externals - nihstro
-#SOURCES_CXX += $(EXTERNALS_DIR)/nihstro/src/parser_assembly.cpp \
-#               $(EXTERNALS_DIR)/nihstro/src/preprocessor.cpp \
-#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/common.cpp \
-#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/compare.cpp \
-#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/declaration.cpp \
-#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/flowcontrol.cpp \
-#               $(EXTERNALS_DIR)/nihstro/src/parser_assembly/floatop.cpp
 
 # Externals - sirit
 SOURCES_CXX += $(EXTERNALS_DIR)/sirit/src/instructions/function.cpp \
@@ -457,6 +1158,7 @@ endif
 SOURCES_CXX += $(SRC_DIR)/common/detached_tasks.cpp \
                $(SRC_DIR)/common/dynamic_library/dynamic_library.cpp \
                $(SRC_DIR)/common/cityhash.cpp \
+               $(SRC_DIR)/common/error.cpp \
                $(SRC_DIR)/common/file_util.cpp \
                $(SRC_DIR)/common/logging/backend.cpp \
                $(SRC_DIR)/common/logging/filter.cpp \
@@ -484,6 +1186,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/arm/dyncom/arm_dyncom_interpreter.cpp \
                $(SRC_DIR)/core/arm/dyncom/arm_dyncom_thumb.cpp \
                $(SRC_DIR)/core/arm/dyncom/arm_dyncom_trans.cpp \
+               $(SRC_DIR)/core/arm/exclusive_monitor.cpp \
                $(SRC_DIR)/core/arm/skyeye_common/armstate.cpp \
                $(SRC_DIR)/core/arm/skyeye_common/armsupp.cpp \
                $(SRC_DIR)/core/arm/skyeye_common/vfp/vfp.cpp \
@@ -514,6 +1217,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/file_sys/ncch_container.cpp \
                $(SRC_DIR)/core/file_sys/patch.cpp \
                $(SRC_DIR)/core/file_sys/path_parser.cpp \
+               $(SRC_DIR)/core/file_sys/plugin_3gx.cpp \
                $(SRC_DIR)/core/file_sys/romfs_reader.cpp \
                $(SRC_DIR)/core/file_sys/savedata_archive.cpp \
                $(SRC_DIR)/core/file_sys/seed_db.cpp \
@@ -529,6 +1233,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/frontend/framebuffer_layout.cpp \
                $(SRC_DIR)/core/frontend/image_interface.cpp \
                $(SRC_DIR)/core/gdbstub/gdbstub.cpp \
+               $(SRC_DIR)/core/gdbstub/hio.cpp \
                $(SRC_DIR)/core/hle/applets/applet.cpp \
                $(SRC_DIR)/core/hle/applets/erreula.cpp \
                $(SRC_DIR)/core/hle/applets/mii_selector.cpp \
@@ -560,6 +1265,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/kernel/timer.cpp \
                $(SRC_DIR)/core/hle/kernel/vm_manager.cpp \
                $(SRC_DIR)/core/hle/kernel/wait_object.cpp \
+               $(SRC_DIR)/core/hle/mii.cpp \
                $(SRC_DIR)/core/hle/romfs.cpp \
                $(SRC_DIR)/core/hle/service/ac/ac.cpp \
                $(SRC_DIR)/core/hle/service/ac/ac_i.cpp \
@@ -578,6 +1284,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/apt/apt_s.cpp \
                $(SRC_DIR)/core/hle/service/apt/apt_u.cpp \
                $(SRC_DIR)/core/hle/service/apt/ns.cpp \
+               $(SRC_DIR)/core/hle/service/apt/ns_c.cpp \
                $(SRC_DIR)/core/hle/service/apt/ns_s.cpp \
                $(SRC_DIR)/core/hle/service/apt/bcfnt/bcfnt.cpp \
                $(SRC_DIR)/core/hle/service/boss/boss.cpp \
@@ -594,6 +1301,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/cecd/cecd_s.cpp \
                $(SRC_DIR)/core/hle/service/cecd/cecd_u.cpp \
                $(SRC_DIR)/core/hle/service/cfg/cfg.cpp \
+               $(SRC_DIR)/core/hle/service/cfg/cfg_defaults.cpp \
                $(SRC_DIR)/core/hle/service/cfg/cfg_i.cpp \
                $(SRC_DIR)/core/hle/service/cfg/cfg_nor.cpp \
                $(SRC_DIR)/core/hle/service/cfg/cfg_s.cpp \
@@ -633,7 +1341,9 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/news/news.cpp \
                $(SRC_DIR)/core/hle/service/news/news_s.cpp \
                $(SRC_DIR)/core/hle/service/news/news_u.cpp \
+               $(SRC_DIR)/core/hle/service/nfc/amiibo_crypto.cpp \
                $(SRC_DIR)/core/hle/service/nfc/nfc.cpp \
+               $(SRC_DIR)/core/hle/service/nfc/nfc_device.cpp \
                $(SRC_DIR)/core/hle/service/nfc/nfc_m.cpp \
                $(SRC_DIR)/core/hle/service/nfc/nfc_u.cpp \
                $(SRC_DIR)/core/hle/service/nim/nim.cpp \
@@ -651,6 +1361,7 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/hle/service/nwm/uds_beacon.cpp \
                $(SRC_DIR)/core/hle/service/nwm/uds_connection.cpp \
                $(SRC_DIR)/core/hle/service/nwm/uds_data.cpp \
+               $(SRC_DIR)/core/hle/service/plgldr/plgldr.cpp \
                $(SRC_DIR)/core/hle/service/pm/pm.cpp \
                $(SRC_DIR)/core/hle/service/pm/pm_app.cpp \
                $(SRC_DIR)/core/hle/service/pm/pm_dbg.cpp \
@@ -688,14 +1399,18 @@ SOURCES_CXX += $(SRC_DIR)/core/arm/dyncom/arm_dyncom.cpp \
                $(SRC_DIR)/core/loader/smdh.cpp \
                $(SRC_DIR)/core/memory.cpp \
                $(SRC_DIR)/core/movie.cpp \
+               $(SRC_DIR)/core/nus_download.cpp \
                $(SRC_DIR)/core/perf_stats.cpp \
                $(SRC_DIR)/core/savestate.cpp \
+               $(SRC_DIR)/core/system_titles.cpp \
                $(SRC_DIR)/core/telemetry_session.cpp \
                $(SRC_DIR)/core/tracer/recorder.cpp
 
 ifeq ($(HAVE_DYNARMIC), 1)
 SOURCES_CXX += $(SRC_DIR)/core/arm/dynarmic/arm_dynarmic.cpp \
-               $(SRC_DIR)/core/arm/dynarmic/arm_dynarmic_cp15.cpp
+               $(SRC_DIR)/core/arm/dynarmic/arm_dynarmic_cp15.cpp \
+               $(SRC_DIR)/core/arm/dynarmic/arm_exclusive_monitor.cpp \
+               $(SRC_DIR)/core/arm/dynarmic/arm_tick_counts.cpp
 endif
 
 ifeq ($(HAVE_RPC), 1)
@@ -789,13 +1504,16 @@ endif
 SOURCES_CXX += $(SRC_DIR)/audio_core/codec.cpp \
                $(SRC_DIR)/audio_core/dsp_interface.cpp \
                $(SRC_DIR)/audio_core/hle/decoder.cpp \
+               $(SRC_DIR)/audio_core/hle/faad2_decoder.cpp \
                $(SRC_DIR)/audio_core/hle/filter.cpp \
                $(SRC_DIR)/audio_core/hle/hle.cpp \
                $(SRC_DIR)/audio_core/hle/mixers.cpp \
                $(SRC_DIR)/audio_core/hle/source.cpp \
                $(SRC_DIR)/audio_core/lle/lle.cpp \
+               $(SRC_DIR)/audio_core/input_details.cpp \
                $(SRC_DIR)/audio_core/interpolate.cpp \
                $(SRC_DIR)/audio_core/sink_details.cpp \
+               $(SRC_DIR)/audio_core/static_input.cpp \
                $(SRC_DIR)/audio_core/time_stretch.cpp \
                $(SRC_DIR)/audio_core/libretro_sink.cpp
 
@@ -810,6 +1528,7 @@ SOURCES_CXX += $(SRC_DIR)/network/network.cpp \
                $(SRC_DIR)/network/packet.cpp \
                $(SRC_DIR)/network/room.cpp \
                $(SRC_DIR)/network/room_member.cpp \
+               $(SRC_DIR)/network/network_settings.cpp \
                $(SRC_DIR)/network/verify_user.cpp
 
 # Citra Libretro
