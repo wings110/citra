@@ -327,7 +327,7 @@ $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/libressl,$p),$p,)):
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
-%.o: %.cpp externals/glslang/build/glslang/build_info.h
+%.o: %.cpp $(EXTERNALS_DIR)/glslang/build/glslang/build_info.h
 	$(CXX) $(CXXFLAGS) $(fpic) -c $(OBJOUT)$@ $<
 
 GIT_REV := $(shell git rev-parse HEAD || echo unknown)
@@ -335,7 +335,7 @@ GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD || echo unknown)
 GIT_DESC := $(shell git describe --always --long --dirty || echo unknown)
 BUILD_DATE := $(shell date +'%Y-%m-%d_%H:%M%z')
 
-src/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
+$(SRC_DIR)/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
 	cat src/common/scm_rev.cpp.in | sed -e 's/@GIT_REV@/$(GIT_REV)/' \
 		-e 's/@GIT_BRANCH@/$(GIT_BRANCH)/' \
 		-e 's/@GIT_DESC@/$(GIT_DESC)/' \
@@ -345,13 +345,13 @@ src/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
 		-e 's/@BUILD_FULLNAME@//' \
 		-e 's/@SHADER_CACHE_VERSION@/$(shell sha1sum $(SHADER_CACHE_DEPENDS) | sha1sum | cut -d" " -f1)/' > $@
 
-externals/glslang/build/glslang/build_info.h: externals/glslang/build_info.h.tmpl externals/glslang/CHANGES.md
-	python3 externals/glslang/build_info.py externals/glslang \
-		-i externals/glslang/build_info.h.tmpl \
-		-o externals/glslang/build/glslang/build_info.h
+$(EXTERNALS_DIR)/glslang/build/glslang/build_info.h: $(EXTERNALS_DIR)/glslang/build_info.h.tmpl $(EXTERNALS_DIR)/glslang/CHANGES.md
+	python3 $(EXTERNALS_DIR)/glslang/build_info.py $(EXTERNALS_DIR)/glslang \
+		-i $(EXTERNALS_DIR)/glslang/build_info.h.tmpl \
+		-o $(EXTERNALS_DIR)/glslang/build/glslang/build_info.h
 
 clean:
-	rm -f $(OBJECTS) $(TARGET) src/common/scm_rev.cpp
+	rm -f $(OBJECTS) $(TARGET) $(SRC_DIR)/common/scm_rev.cpp
 	rm -rf $(SRC_DIR)/video_core/shaders
 
 GLSLANG := glslang
