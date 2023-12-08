@@ -29,22 +29,6 @@ include $(BUILD_STATIC_LIBRARY)
 # Build the final shared library
 include $(CLEAR_VARS)
 
-GIT_REV := "$(shell git rev-parse HEAD || echo unknown)"
-GIT_BRANCH := "$(shell git rev-parse --abbrev-ref HEAD || echo unknown)"
-GIT_DESC := "$(shell git describe --always --long --dirty || echo unknown)"
-BUILD_DATE := "$(shell date +'%d/%m/%Y %H:%M')"
-
-
-CUSTOM_DEF :=
-CUSTOM_DEF += -DGIT_REV=\"$(GIT_REV)\" \
-           -DGIT_BRANCH=\"$(GIT_BRANCH)\" \
-           -DGIT_DESC=\"$(GIT_DESC)\" \
-           -DBUILD_NAME=\"citra-libretro\" \
-           -DBUILD_DATE=\"$(BUILD_DATE)\" \
-           -DBUILD_VERSION=\"$(GIT_BRANCH)-$(GIT_DESC)\" \
-           -DBUILD_FULLNAME=\"\" \
-           -DSHADER_CACHE_VERSION=\"0\"
-
 ARCH := aarch64
 HAVE_LIBRETRO_VFS := 1
 HAVE_DYNARMIC = 0
