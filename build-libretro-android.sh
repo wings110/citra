@@ -3,7 +3,7 @@
 set -e
 
 cd $(dirname $0)
-[ -z "$NDK" ] && echo You must specify ndk path in env like "NDK=/path/to/android-ndk-r26b $0" && exit 1
+[ -z "$NDK" ] && echo "You must specify ndk path in env like \"NDK=/path/to/android-ndk-r26b $0\"" && exit 1
 ABI=arm64-v8a
 MINSDKVERSION=21
 mkdir -p build-android && cd build-android
