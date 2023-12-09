@@ -146,8 +146,11 @@ CXXFLAGS += -DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_SSSE3 -DCRYPTOPP_DISABLE_S
 ifeq ($(HAVE_DYNARMIC), 1)
 DEFINES += -DHAVE_DYNARMIC
 
-DYNARMICINCFLAGS := -I$(EXTERNALS_DIR)/dynarmic/src/dynarmic \
+DYNARMICINCFLAGS := -I$(EXTERNALS_DIR)/dynarmic/src \
+                    -I$(EXTERNALS_DIR)/dynarmic/src/dynarmic \
                     -I$(EXTERNALS_DIR)/dynarmic/externals/mcl/include \
+                    -I$(EXTERNALS_DIR)/dynarmic/externals/oaknut/include \
+                    -I$(EXTERNALS_DIR)/dynarmic/externals/robin-map/include \
                     -I$(EXTERNALS_DIR)/dynarmic/externals/zycore/include \
                     -I$(EXTERNALS_DIR)/dynarmic/externals/zydis/include \
                     -I$(EXTERNALS_DIR)/dynarmic/externals/zydis/src \
@@ -301,7 +304,8 @@ DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/externals/mcl/src/assert.cpp \
             DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_generic.cpp
         endif
     else ifeq ($(ARCH), aarch64)
-        DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/a32_interface.cpp \
+        DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/a32_address_space.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/a32_interface.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/a32_jitstate.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/abi.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64.cpp \
@@ -310,10 +314,10 @@ DYNARMICSOURCES_CXX += $(EXTERNALS_DIR)/dynarmic/externals/mcl/src/assert.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_floating_point.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_packed.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/emit_arm64_saturation.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/exception_handler_posix.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/arm64/reg_alloc.cpp \
                         $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/block_range_information.cpp \
-                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_generic.cpp
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_generic.cpp \
+                        $(EXTERNALS_DIR)/dynarmic/src/dynarmic/backend/exception_handler_posix.cpp
     else
         $(error Bad architecture used with dynarmic: $(ARCH))
     endif
@@ -343,8 +347,8 @@ endif
 FAAD2_VERSION := '"$(shell cat $(EXTERNALS_DIR)/faad2/faad2/properties.json | grep 'PACKAGE_VERSION' | cut -d'"' -f4)"'
 FAAD2FLAGS := -DLC_ONLY_DECODER -DDISABLE_SBR -DPACKAGE_VERSION=$(FAAD2_VERSION) \
     -DAPPLY_DRC -DHAVE_INTTYPES_H=1 -DHAVE_MEMCPY=1 -DHAVE_STRING_H=1 -DHAVE_STRINGS_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_SYS_TYPES_H=1 -DSTDC_HEADERS=1 \
-    -I$(EXTERNALS_DIR)/faad2/faad2/libfaad
-SOURCES_C += $(EXTERNALS_DIR)/faad2/faad2/libfaad/bits.c \
+    -I$(EXTERNALS_DIR)/faad2/faad2/include -I$(EXTERNALS_DIR)/faad2/faad2/libfaad
+FAAD2SOURCES_C += $(EXTERNALS_DIR)/faad2/faad2/libfaad/bits.c \
             $(EXTERNALS_DIR)/faad2/faad2/libfaad/cfft.c \
             $(EXTERNALS_DIR)/faad2/faad2/libfaad/common.c \
             $(EXTERNALS_DIR)/faad2/faad2/libfaad/decoder.c \
@@ -411,6 +415,7 @@ endif
 
 # Externals - libressl
 LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/include/compat \
+                -I$(EXTERNALS_DIR)/libressl/include \
                 -I$(EXTERNALS_DIR)/libressl/crypto \
                 -I$(EXTERNALS_DIR)/libressl/crypto/asn1 \
                 -I$(EXTERNALS_DIR)/libressl/crypto/bio \
@@ -431,30 +436,30 @@ LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/include/compat \
                 -I$(EXTERNALS_DIR)/libressl/crypto/rsa \
                 -I$(EXTERNALS_DIR)/libressl/crypto/sha \
                 -I$(EXTERNALS_DIR)/libressl/crypto/x509 \
-                -DOPENSSL_NO_HW_PADLOCK -D__BEGIN_HIDDEN_DECLS= -D__END_HIDDEN_DECLS= \
+                -DLIBRESSL_INTERNAL -DOPENSSL_NO_HW_PADLOCK -D__BEGIN_HIDDEN_DECLS= -D__END_HIDDEN_DECLS= \
                 -DLIBRESSL_CRYPTO_INTERNAL -DHAVE_ENDIAN_H -DOPENSSL_NO_ASM
 ifeq ($(ARCH), x86_64)
-    LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/amd64 -DLIBRESSL_INTERNAL
+    LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/amd64
 else ifeq ($(ARCH), aarch64)
     LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/aarch64
 else
     $(error Bad architecture used with libressl: $(ARCH))
 endif
 ifeq ($(platform), win)
-    SOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/compat/crypto_lock_win.c \
+    LIBRESSLSOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/compat/crypto_lock_win.c \
             $(EXTERNALS_DIR)/libressl/crypto/compat/getprogname_windows.c \
             $(EXTERNALS_DIR)/libressl/crypto/compat/posix_win.c \
             $(EXTERNALS_DIR)/libressl/crypto/bio/b_win.c \
             $(EXTERNALS_DIR)/libressl/crypto/bio/bss_log.c \
             $(EXTERNALS_DIR)/libressl/crypto/ui/ui_openssl_win.c
 else ifeq ($(platform), unix)
-    SOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/crypto_lock.c \
+    LIBRESSLSOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/crypto_lock.c \
             $(EXTERNALS_DIR)/libressl/crypto/compat/getprogname_unimpl.c \
             $(EXTERNALS_DIR)/libressl/crypto/bio/b_posix.c \
             $(EXTERNALS_DIR)/libressl/crypto/bio/bss_log.c \
             $(EXTERNALS_DIR)/libressl/crypto/ui/ui_openssl.c
 endif
-SOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/compat/freezero.c \
+LIBRESSLSOURCES_C += $(EXTERNALS_DIR)/libressl/crypto/compat/freezero.c \
             $(EXTERNALS_DIR)/libressl/crypto/compat/recallocarray.c \
             $(EXTERNALS_DIR)/libressl/crypto/compat/strtonum.c \
             $(EXTERNALS_DIR)/libressl/crypto/compat/syslog_r.c \

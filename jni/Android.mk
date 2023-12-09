@@ -8,21 +8,35 @@ $(shell make -C .. shaders)
 
 
 # Build the dynarmic module as a static library
-
 include $(CLEAR_VARS)
 LOCAL_MODULE := dynarmic
 HAVE_DYNARMIC := 1
 HAVE_LIBRETRO_VFS := 0
 ARCH := aarch64
-
 include ../Makefile.common
-
 LOCAL_CPPFLAGS := $(DYNARMICINCFLAGS) \
         -I$(EXTERNALS_DIR)/dynarmic/include \
         -I$(EXTERNALS_DIR)/dynarmic/src/frontend/A32 \
         -I$(EXTERNALS_DIR)/boost
-
 LOCAL_SRC_FILES := $(DYNARMICSOURCES_CXX)
+include $(BUILD_STATIC_LIBRARY)
+
+# Build the faad2 module as a static library
+include $(CLEAR_VARS)
+LOCAL_MODULE := faad2
+ARCH := aarch64
+include ../Makefile.common
+LOCAL_CFLAGS := $(FAAD2FLAGS)
+LOCAL_SRC_FILES := $(FAAD2SOURCES_C)
+include $(BUILD_STATIC_LIBRARY)
+
+# Build the libressl module as a static library
+include $(CLEAR_VARS)
+LOCAL_MODULE := ssl
+ARCH := aarch64
+include ../Makefile.common
+LOCAL_CFLAGS := $(LIBRESSLFLAGS)
+LOCAL_SRC_FILES := $(LIBRESSLSOURCES_C)
 include $(BUILD_STATIC_LIBRARY)
 
 
@@ -64,7 +78,7 @@ INCFLAGS += -I$(SRC_DIR)/audio_core/hle -I$(EXTERNALS_DIR)/android-ifaddrs
 LOCAL_SRC_FILES := $(ANDROID_SOURCES) $(SOURCES_CXX) $(SOURCES_C)
 LOCAL_CPPFLAGS := -Wall -Wno-unused-local-typedef -std=c++20 -D__LIBRETRO__ \$(fpic) $(DEFINES) $(CUSTOM_DEF) $(ANDROID_INCLUDES) $(INCFLAGS) $(INCFLAGS_PLATFORM) $(ANDROID_INCLUDES)
 LOCAL_CFLAGS := -D__LIBRETRO__ $(fpic) $(DEFINES) $(CUSTOM_DEF) $(INCFLAGS) $(INCFLAGS_PLATFORM) $(ANDROID_INCLUDES) $(CFLAGS)
-LOCAL_STATIC_LIBRARIES += dynarmic cpufeatures
+LOCAL_STATIC_LIBRARIES += dynarmic faad ssl cpufeatures
 LOCAL_LDLIBS := -llog -lmediandk
 
 include $(BUILD_SHARED_LIBRARY)
