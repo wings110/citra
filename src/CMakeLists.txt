@@ -171,15 +171,11 @@ if (ENABLE_LIBRETRO)
     add_subdirectory(citra_libretro)
 endif()
 
-if (ANDROID)
-    add_subdirectory(android/app/src/main/cpp)
-endif()
-
 if (ENABLE_DEDICATED_ROOM)
     add_subdirectory(dedicated_room)
 endif()
 
-if (ANDROID)
+if (ANDROID AND NOT ENABLE_LIBRETRO)
     add_subdirectory(android/app/src/main/jni)
     target_include_directories(citra-android PRIVATE android/app/src/main)
 endif()
