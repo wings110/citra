@@ -333,12 +333,13 @@ $(foreach p,$(OBJECTS),$(if $(findstring $(EXTERNALS_DIR)/libressl,$p),$p,)):
 GIT_REV := $(shell git rev-parse HEAD || echo unknown)
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD || echo unknown)
 GIT_DESC := $(shell git describe --always --long --dirty || echo unknown)
+GIT_COMMIT_DATE := $(shell git log -n1 --date=format-local:'%y%m%d' --format='%cd')
 BUILD_DATE := $(shell date +'%Y-%m-%d_%H:%M%z')
 
 $(SRC_DIR)/common/scm_rev.cpp: $(SHADER_CACHE_DEPENDS)
 	cat src/common/scm_rev.cpp.in | sed -e 's/@GIT_REV@/$(GIT_REV)/' \
 		-e 's/@GIT_BRANCH@/$(GIT_BRANCH)/' \
-		-e 's/@GIT_DESC@/$(GIT_DESC)/' \
+		-e 's/@GIT_DESC@/$(GIT_COMMIT_DATE)+$(GIT_DESC)/' \
 		-e 's/@REPO_NAME@/citra-libretro/' \
 		-e 's/@BUILD_DATE@/$(BUILD_DATE)/' \
 		-e 's/@BUILD_VERSION@/$(GIT_BRANCH)-$(GIT_DESC)/' \
