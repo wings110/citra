@@ -350,6 +350,8 @@ $(EXTERNALS_DIR)/glslang/build/glslang/build_info.h: $(EXTERNALS_DIR)/glslang/bu
 		-i $(EXTERNALS_DIR)/glslang/build_info.h.tmpl \
 		-o $(EXTERNALS_DIR)/glslang/build/glslang/build_info.h
 
+genfiles: $(SRC_DIR)/common/scm_rev.cpp $(EXTERNALS_DIR)/glslang/build/glslang/build_info.h
+
 clean:
 	rm -f $(OBJECTS) $(TARGET) $(SRC_DIR)/common/scm_rev.cpp
 	rm -rf $(SRC_DIR)/video_core/shaders
@@ -385,4 +387,4 @@ shaders: $(SHADER_FILES)
 	done
 
 
-.PHONY: clean shaders
+.PHONY: clean shaders genfiles

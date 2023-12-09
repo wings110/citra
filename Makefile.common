@@ -30,7 +30,7 @@ INCFLAGS := -I$(SRC_DIR) \
 SOURCES_C   :=
 SOURCES_CXX :=
 
-CXXFLAGS += -DCPPHTTPLIB_OPENSSL_SUPPORT
+DEFINES += -DCPPHTTPLIB_OPENSSL_SUPPORT
 
 # Begone boost linking
 CXXFLAGS += -DBOOST_ERROR_CODE_HEADER_ONLY -DBOOST_SYSTEM_NO_LIB -DBOOST_DATE_TIME_NO_LIB -DBOOST_REGEX_NO_LIB \
@@ -431,10 +431,10 @@ LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/include/compat \
                 -I$(EXTERNALS_DIR)/libressl/crypto/rsa \
                 -I$(EXTERNALS_DIR)/libressl/crypto/sha \
                 -I$(EXTERNALS_DIR)/libressl/crypto/x509 \
-                -DLIBRESSL_INTERNAL -DOPENSSL_NO_HW_PADLOCK -D__BEGIN_HIDDEN_DECLS= -D__END_HIDDEN_DECLS= \
+                -DOPENSSL_NO_HW_PADLOCK -D__BEGIN_HIDDEN_DECLS= -D__END_HIDDEN_DECLS= \
                 -DLIBRESSL_CRYPTO_INTERNAL -DHAVE_ENDIAN_H -DOPENSSL_NO_ASM
 ifeq ($(ARCH), x86_64)
-    LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/amd64
+    LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/amd64 -DLIBRESSL_INTERNAL
 else ifeq ($(ARCH), aarch64)
     LIBRESSLFLAGS += -I$(EXTERNALS_DIR)/libressl/crypto/bn/arch/aarch64
 else
