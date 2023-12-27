@@ -598,7 +598,7 @@ void context_reset() {
         VideoCore::g_renderer = std::make_unique<OpenGL::RendererOpenGL>(Core::System::GetInstance(), *emu_instance->emu_window, nullptr);
     }
 
-    if(Settings::values.use_disk_shader_cache) {
+    if (Settings::values.use_disk_shader_cache) {
         Core::System::GetInstance().Renderer().Rasterizer()->LoadDiskResources(false, nullptr);
     }
 
@@ -608,6 +608,7 @@ void context_reset() {
 
 void context_destroy() {
     emu_instance->emu_window->DestroyContext();
+    VideoCore::g_renderer.reset();
 }
 
 void retro_reset() {
