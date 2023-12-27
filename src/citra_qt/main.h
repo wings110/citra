@@ -83,14 +83,6 @@ class GMainWindow : public QMainWindow {
     /// Max number of recently loaded items to keep track of
     static const int max_recent_files_item = 10;
 
-    // TODO: Make use of this!
-    enum {
-        UI_IDLE,
-        UI_EMU_BOOTING,
-        UI_EMU_RUNNING,
-        UI_EMU_STOPPING,
-    };
-
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
@@ -284,6 +276,9 @@ private:
     void ShowMouseCursor();
     void OpenPerGameConfiguration(u64 title_id, const QString& file_name);
     void UpdateAPIIndicator(bool update = false);
+#ifdef __unix__
+    void SetGamemodeEnabled(bool state);
+#endif
 
     std::unique_ptr<Ui::MainWindow> ui;
     Core::System& system;

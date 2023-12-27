@@ -124,6 +124,13 @@ else()
         add_compile_options("-stdlib=libc++")
     endif()
 
+    if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+        # GCC may warn when it ignores attributes like maybe_unused,
+        # which is a problem for older versions (e.g. GCC 11).
+        add_compile_options("-Wno-attributes")
+        add_compile_options("-Wno-interference-size")
+    endif()
+
     if (MINGW)
         add_definitions(-DMINGW_HAS_SECURE_API)
         if (COMPILE_WITH_DWARF)
@@ -146,6 +153,10 @@ else()
         set(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcTP <TARGET> <LINK_FLAGS> <OBJECTS>")
         set(CMAKE_CXX_ARCHIVE_APPEND "<CMAKE_AR> qTP  <TARGET> <LINK_FLAGS> <OBJECTS>")
     endif()
+endif()
+
+if (NOT APPLE)
+    add_compile_definitions(HAS_OPENGL)
 endif()
 
 add_subdirectory(common)

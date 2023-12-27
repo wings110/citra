@@ -90,7 +90,6 @@ add_library(citra_common STATIC
     file_util.cpp
     file_util.h
     hash.h
-    linear_disk_cache.h
     literals.h
     logging/backend.cpp
     logging/backend.h
@@ -110,7 +109,6 @@ add_library(citra_common STATIC
     microprofile.cpp
     microprofile.h
     microprofileui.h
-    misc.cpp
     param_package.cpp
     param_package.h
     polyfill_thread.h
@@ -127,6 +125,7 @@ add_library(citra_common STATIC
     serialization/boost_discrete_interval.hpp
     serialization/boost_flat_set.h
     serialization/boost_small_vector.hpp
+    serialization/boost_std_variant.hpp
     serialization/boost_vector.hpp
     static_lru_cache.h
     string_literal.h
@@ -154,6 +153,15 @@ add_library(citra_common STATIC
     zstd_compression.cpp
     zstd_compression.h
 )
+
+if (UNIX AND NOT APPLE)
+  target_sources(citra_common PRIVATE
+    linux/gamemode.cpp
+    linux/gamemode.h
+  )
+
+  target_link_libraries(citra_common PRIVATE gamemode)
+endif()
 
 if (APPLE)
     target_sources(citra_common PUBLIC

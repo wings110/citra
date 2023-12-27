@@ -308,7 +308,7 @@ if (NOT WIN32)
 endif()
 
 if (UNIX AND NOT APPLE)
-    target_link_libraries(citra-qt PRIVATE Qt6::DBus)
+    target_link_libraries(citra-qt PRIVATE Qt6::DBus gamemode)
 endif()
 
 target_compile_definitions(citra-qt PRIVATE
@@ -349,10 +349,6 @@ endif()
 
 if(UNIX AND NOT APPLE)
     install(TARGETS citra-qt RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
-endif()
-
-if (NOT APPLE)
-    target_compile_definitions(citra-qt PRIVATE HAS_OPENGL)
 endif()
 
 if (CITRA_USE_PRECOMPILED_HEADERS)
