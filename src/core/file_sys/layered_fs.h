@@ -53,14 +53,6 @@ public:
 
     bool DumpRomFS(const std::string& target_path);
 
-    bool AllowsCachedReads() const override {
-        return false;
-    }
-
-    bool CacheReady(std::size_t file_offset, std::size_t length) override {
-        return false;
-    }
-
 private:
     struct File;
     struct Directory {

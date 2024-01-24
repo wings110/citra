@@ -12,14 +12,6 @@ namespace Ui {
 class ConfigureSystem;
 }
 
-namespace ConfigurationShared {
-enum class CheckState;
-}
-
-namespace Core {
-class System;
-}
-
 namespace Service {
 namespace CFG {
 class Module;
@@ -30,7 +22,7 @@ class ConfigureSystem : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureSystem(Core::System& system, QWidget* parent = nullptr);
+    explicit ConfigureSystem(QWidget* parent = nullptr);
     ~ConfigureSystem() override;
 
     void ApplyConfiguration();
@@ -45,14 +37,7 @@ private:
     void UpdateInitTime(int init_clock);
     void RefreshConsoleID();
 
-    void SetupPerGameUI();
-
-    void DownloadFromNUS();
-
-private:
     std::unique_ptr<Ui::ConfigureSystem> ui;
-    Core::System& system;
-    ConfigurationShared::CheckState is_new_3ds;
     bool enabled = false;
 
     std::shared_ptr<Service::CFG::Module> cfg;
@@ -63,5 +48,4 @@ private:
     int sound_index = 0;
     u8 country_code;
     u16 play_coin;
-    bool system_setup;
 };

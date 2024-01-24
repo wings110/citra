@@ -3,15 +3,15 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <vector>
 #include "common/assert.h"
-#include "common/texture.h"
+#include "common/common_types.h"
 
 namespace Common {
-
-void FlipRGBA8Texture(std::span<u8> tex, u32 width, u32 height) {
+void FlipRGBA8Texture(std::vector<u8>& tex, u64 width, u64 height) {
     ASSERT(tex.size() == width * height * 4);
-    const u32 line_size = width * 4;
-    for (u32 line = 0; line < height / 2; line++) {
+    const u64 line_size = width * 4;
+    for (u64 line = 0; line < height / 2; line++) {
         const u32 offset_1 = line * line_size;
         const u32 offset_2 = (height - line - 1) * line_size;
         // Swap lines
@@ -19,5 +19,4 @@ void FlipRGBA8Texture(std::span<u8> tex, u32 width, u32 height) {
                          tex.begin() + offset_2);
     }
 }
-
 } // namespace Common

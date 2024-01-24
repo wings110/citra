@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <array>
+#include <cinttypes>
 #include "common/archives.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -12,6 +13,9 @@
 #include "core/file_sys/errors.h"
 #include "core/file_sys/ivfc_archive.h"
 #include "core/hle/kernel/process.h"
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
 
 SERIALIZE_EXPORT_IMPL(FileSys::ArchiveFactory_SelfNCCH)
 
@@ -48,7 +52,7 @@ public:
         }
 
         std::memcpy(buffer, data->data(), data->size());
-        return data->size();
+        return MakeResult<std::size_t>(data->size());
     }
 
     ResultVal<std::size_t> Write(u64 offset, std::size_t length, bool flush,
@@ -183,7 +187,8 @@ private:
         if (ncch_data.romfs_file) {
             std::unique_ptr<DelayGenerator> delay_generator =
                 std::make_unique<RomFSDelayGenerator>();
-            return std::make_unique<IVFCFile>(ncch_data.romfs_file, std::move(delay_generator));
+            return MakeResult<std::unique_ptr<FileBackend>>(
+                std::make_unique<IVFCFile>(ncch_data.romfs_file, std::move(delay_generator)));
         } else {
             LOG_INFO(Service_FS, "Unable to read RomFS");
             return ERROR_ROMFS_NOT_FOUND;
@@ -194,8 +199,8 @@ private:
         if (ncch_data.update_romfs_file) {
             std::unique_ptr<DelayGenerator> delay_generator =
                 std::make_unique<RomFSDelayGenerator>();
-            return std::make_unique<IVFCFile>(ncch_data.update_romfs_file,
-                                              std::move(delay_generator));
+            return MakeResult<std::unique_ptr<FileBackend>>(std::make_unique<IVFCFile>(
+                ncch_data.update_romfs_file, std::move(delay_generator)));
         } else {
             LOG_INFO(Service_FS, "Unable to read update RomFS");
             return ERROR_ROMFS_NOT_FOUND;
@@ -205,7 +210,8 @@ private:
     ResultVal<std::unique_ptr<FileBackend>> OpenExeFS(const std::string& filename) const {
         if (filename == "icon") {
             if (ncch_data.icon) {
-                return std::make_unique<ExeFSSectionFile>(ncch_data.icon);
+                return MakeResult<std::unique_ptr<FileBackend>>(
+                    std::make_unique<ExeFSSectionFile>(ncch_data.icon));
             }
 
             LOG_WARNING(Service_FS, "Unable to read icon");
@@ -214,7 +220,8 @@ private:
 
         if (filename == "logo") {
             if (ncch_data.logo) {
-                return std::make_unique<ExeFSSectionFile>(ncch_data.logo);
+                return MakeResult<std::unique_ptr<FileBackend>>(
+                    std::make_unique<ExeFSSectionFile>(ncch_data.logo));
             }
 
             LOG_WARNING(Service_FS, "Unable to read logo");
@@ -223,7 +230,8 @@ private:
 
         if (filename == "banner") {
             if (ncch_data.banner) {
-                return std::make_unique<ExeFSSectionFile>(ncch_data.banner);
+                return MakeResult<std::unique_ptr<FileBackend>>(
+                    std::make_unique<ExeFSSectionFile>(ncch_data.banner));
             }
 
             LOG_WARNING(Service_FS, "Unable to read banner");
@@ -293,7 +301,8 @@ void ArchiveFactory_SelfNCCH::Register(Loader::AppLoader& app_loader) {
 
 ResultVal<std::unique_ptr<ArchiveBackend>> ArchiveFactory_SelfNCCH::Open(const Path& path,
                                                                          u64 program_id) {
-    return std::make_unique<SelfNCCHArchive>(ncch_data[program_id]);
+    auto archive = std::make_unique<SelfNCCHArchive>(ncch_data[program_id]);
+    return MakeResult<std::unique_ptr<ArchiveBackend>>(std::move(archive));
 }
 
 ResultCode ArchiveFactory_SelfNCCH::Format(const Path&, const FileSys::ArchiveFormatInfo&,

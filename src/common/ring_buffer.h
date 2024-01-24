@@ -11,7 +11,6 @@
 #include <cstring>
 #include <limits>
 #include <new>
-#include <span>
 #include <type_traits>
 #include <vector>
 #include "common/common_types.h"
@@ -58,7 +57,7 @@ public:
         return push_count;
     }
 
-    std::size_t Push(std::span<const T> input) {
+    std::size_t Push(const std::vector<T>& input) {
         return Push(input.data(), input.size() / granularity);
     }
 
@@ -105,7 +104,9 @@ public:
 private:
     // It is important to separate the below atomics for performance reasons:
     // Having them on the same cache-line would result in false-sharing between them.
-#ifdef __cpp_lib_hardware_interference_size
+    // TODO: Remove this ifdef whenever clang and GCC support
+    //       std::hardware_destructive_interference_size.
+#if defined(_MSC_VER) && _MSC_VER >= 1911
     static constexpr std::size_t padding_size =
         std::hardware_destructive_interference_size - sizeof(std::atomic_size_t);
 #else

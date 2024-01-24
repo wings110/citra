@@ -68,7 +68,7 @@ public:
     void HandleSyncRequest(Kernel::HLERequestContext& context) override;
 
     /// Retrieves name of a function based on the header code. For IPC Recorder.
-    std::string GetFunctionName(IPC::Header header) const;
+    std::string GetFunctionName(u32 header) const;
 
 protected:
     /// Member-function pointer type of SyncRequest handlers.
@@ -80,7 +80,7 @@ private:
     friend class ServiceFramework;
 
     struct FunctionInfoBase {
-        u32 command_id;
+        u32 expected_header;
         HandlerFnP<ServiceFrameworkBase> handler_callback;
         const char* name;
     };
@@ -122,18 +122,21 @@ class ServiceFramework : public ServiceFrameworkBase {
 protected:
     /// Contains information about a request type which is handled by the service.
     struct FunctionInfo : FunctionInfoBase {
+        // TODO(yuriks): This function could be constexpr, but clang is the only compiler that
+        // doesn't emit an ICE or a wrong diagnostic because of the static_cast.
+
         /**
          * Constructs a FunctionInfo for a function.
          *
-         * @param command_id command ID in the command buffer which will trigger dispatch
+         * @param expected_header request header in the command buffer which will trigger dispatch
          *     to this handler
          * @param handler_callback member function in this service which will be called to handle
          *     the request
          * @param name human-friendly name for the request. Used mostly for logging purposes.
          */
-        constexpr FunctionInfo(u32 command_id, HandlerFnP<Self> handler_callback, const char* name)
+        FunctionInfo(u32 expected_header, HandlerFnP<Self> handler_callback, const char* name)
             : FunctionInfoBase{
-                  command_id,
+                  expected_header,
                   // Type-erase member function pointer by casting it down to the base class.
                   static_cast<HandlerFnP<ServiceFrameworkBase>>(handler_callback), name} {}
     };
@@ -191,7 +194,7 @@ struct ServiceModuleInfo {
     std::function<void(Core::System&)> init_function;
 };
 
-extern const std::array<ServiceModuleInfo, 41> service_module_map;
+extern const std::array<ServiceModuleInfo, 40> service_module_map;
 
 } // namespace Service
 

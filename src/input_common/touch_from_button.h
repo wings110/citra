@@ -16,6 +16,7 @@ class TouchFromButtonFactory final : public Input::Factory<Input::TouchDevice> {
 public:
     /**
      * Creates a touch device from a list of button devices
+     * @param unused
      */
     std::unique_ptr<Input::TouchDevice> Create(const Common::ParamPackage& params) override;
 };

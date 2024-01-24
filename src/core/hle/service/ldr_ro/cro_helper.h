@@ -15,6 +15,8 @@ namespace Kernel {
 class Process;
 }
 
+class ARM_Interface;
+
 namespace Service::LDR {
 
 #define ASSERT_CRO_STRUCT(name, size)                                                              \

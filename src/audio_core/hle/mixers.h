@@ -34,7 +34,8 @@ private:
     struct {
         std::array<float, 3> intermediate_mixer_volume = {};
 
-        std::array<bool, 2> aux_bus_enable = {};
+        bool mixer1_enabled = false;
+        bool mixer2_enabled = false;
         std::array<QuadFrame32, 3> intermediate_mix_buffer = {};
 
         OutputFormat output_format = OutputFormat::Stereo;
@@ -59,7 +60,8 @@ private:
     void serialize(Archive& ar, const unsigned int) {
         ar& current_frame;
         ar& state.intermediate_mixer_volume;
-        ar& state.aux_bus_enable;
+        ar& state.mixer1_enabled;
+        ar& state.mixer2_enabled;
         ar& state.intermediate_mix_buffer;
         ar& state.output_format;
     }

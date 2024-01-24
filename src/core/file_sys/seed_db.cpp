@@ -143,7 +143,7 @@ u32 GetSeedCount() {
     if (!db.Load()) {
         return 0;
     }
-    return static_cast<u32>(db.GetCount());
+    return db.GetCount();
 }
 
 } // namespace FileSys

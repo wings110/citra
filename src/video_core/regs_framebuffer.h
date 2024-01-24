@@ -3,7 +3,9 @@
 // Refer to the license.txt file included.
 
 #pragma once
+
 #include <array>
+
 #include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
@@ -159,7 +161,6 @@ struct FramebufferRegs {
         } stencil_test;
 
         union {
-            u32 depth_color_mask;
             BitField<0, 1, u32> depth_test_enable;
             BitField<4, 3, CompareFunc> depth_test_func;
             BitField<8, 1, u32> red_enable;
@@ -275,20 +276,10 @@ struct FramebufferRegs {
         case DepthFormat::D24:
         case DepthFormat::D24S8:
             return 24;
-        default:
-            UNREACHABLE_MSG("Unknown depth format {}", format);
         }
 
-        return 0;
+        ASSERT_MSG(false, "Unknown depth format {}", format);
     }
-
-    [[nodiscard]] bool IsShadowRendering() const {
-        return output_merger.fragment_operation_mode == FragmentOperationMode::Shadow;
-    }
-
-    [[nodiscard]] bool HasStencil() const {
-        return framebuffer.depth_format == DepthFormat::D24S8;
-    };
 
     INSERT_PADDING_WORDS(0x10); // Gas related registers
 

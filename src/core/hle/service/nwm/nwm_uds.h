@@ -65,7 +65,7 @@ static_assert(sizeof(NodeInfo) == 40, "NodeInfo has incorrect size.");
 
 using NodeList = std::vector<NodeInfo>;
 
-enum class NetworkStatus : u32 {
+enum class NetworkStatus {
     NotConnected = 3,
     ConnectedAsHost = 6,
     Connecting = 7,
@@ -73,15 +73,15 @@ enum class NetworkStatus : u32 {
     ConnectedAsSpectator = 10,
 };
 
-enum class NetworkStatusChangeReason : u32 {
-    None = 0,
-    ConnectionEstablished = 1,
-    ConnectionLost = 4,
+enum class DisconnectStatus {
+    Connected = 1,
+    NotConnected = 2,
+    // TODO(B3N30): Figure out the other values
 };
 
 struct ConnectionStatus {
-    enum_le<NetworkStatus> status;
-    enum_le<NetworkStatusChangeReason> status_change_reason;
+    u32_le status;
+    u32_le disconnect_reason;
     u16_le network_node_id;
     u16_le changed_nodes;
     u16_le nodes[UDSMaxNodes];
@@ -443,20 +443,23 @@ private:
      *      1 : Result of function, 0 on success, otherwise error code
      *      2, 3: output buffer return descriptor & ptr
      */
+    void DecryptBeaconData(Kernel::HLERequestContext& ctx, u16 command_id);
+
+    template <u16 command_id>
     void DecryptBeaconData(Kernel::HLERequestContext& ctx);
 
     ResultVal<std::shared_ptr<Kernel::Event>> Initialize(
         u32 sharedmem_size, const NodeInfo& node, u16 version,
         std::shared_ptr<Kernel::SharedMemory> sharedmem);
 
-    ResultCode BeginHostingNetwork(std::span<const u8> network_info_buffer,
+    ResultCode BeginHostingNetwork(const u8* network_info_buffer, std::size_t network_info_size,
                                    std::vector<u8> passphrase);
 
     void ConnectToNetwork(Kernel::HLERequestContext& ctx, u16 command_id,
-                          std::span<const u8> network_info_buffer, u8 connection_type,
-                          std::vector<u8> passphrase);
+                          const u8* network_info_buffer, std::size_t network_info_size,
+                          u8 connection_type, std::vector<u8> passphrase);
 
-    void BeaconBroadcastCallback(std::uintptr_t user_data, s64 cycles_late);
+    void BeaconBroadcastCallback(u64 userdata, s64 cycles_late);
 
     /**
      * Returns a list of received 802.11 beacon frames from the specified sender since the last

@@ -6,7 +6,6 @@
 
 #include <array>
 #include <atomic>
-#include <span>
 #include <boost/serialization/array.hpp>
 #include "common/bit_field.h"
 #include "common/swap.h"
@@ -16,7 +15,6 @@
 namespace Core {
 struct TimingEventType;
 class Timing;
-class Movie;
 } // namespace Core
 
 namespace Service::IR {
@@ -44,24 +42,23 @@ static_assert(sizeof(ExtraHIDResponse) == 6, "HID status response has wrong size
  */
 class ExtraHID final : public IRDevice {
 public:
-    explicit ExtraHID(SendFunc send_func, Core::Timing& timing, Core::Movie& movie);
+    explicit ExtraHID(SendFunc send_func, Core::Timing& timing);
     ~ExtraHID();
 
     void OnConnect() override;
     void OnDisconnect() override;
-    void OnReceive(std::span<const u8> data) override;
+    void OnReceive(const std::vector<u8>& data) override;
 
     /// Requests input devices reload from current settings. Called when the input settings change.
     void RequestInputDevicesReload();
 
 private:
     void SendHIDStatus();
-    void HandleConfigureHIDPollingRequest(std::span<const u8> request);
-    void HandleReadCalibrationDataRequest(std::span<const u8> request);
+    void HandleConfigureHIDPollingRequest(const std::vector<u8>& request);
+    void HandleReadCalibrationDataRequest(const std::vector<u8>& request);
     void LoadInputDevices();
 
     Core::Timing& timing;
-    Core::Movie& movie;
     u8 hid_period;
     Core::TimingEventType* hid_polling_callback_id;
     std::array<u8, 0x40> calibration_data;

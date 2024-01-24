@@ -14,6 +14,9 @@
 #include "core/file_sys/file_backend.h"
 #include "core/hle/result.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
+
 namespace Service::FS {
 enum class MediaType : u32;
 } // namespace Service::FS

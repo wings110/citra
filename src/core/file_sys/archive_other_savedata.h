@@ -9,6 +9,9 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include "core/file_sys/archive_source_sd_savedata.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
+
 namespace FileSys {
 
 /// File system interface to the OtherSaveDataPermitted archive

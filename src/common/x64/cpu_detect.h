@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include "common/arch.h"
-#if CITRA_ARCH(x86_64)
-
 namespace Common {
 
 /// x86/x64 CPU capabilities that may be detected by this module
@@ -36,5 +33,3 @@ struct CPUCaps {
 const CPUCaps& GetCPUCaps();
 
 } // namespace Common
-
-#endif // CITRA_ARCH(x86_64)

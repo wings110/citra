@@ -11,6 +11,8 @@
 
 namespace LibRetro {
 
+static retro_audio_sample_batch_t audio_batch_cb;
+
 void SubmitAudio(const int16_t* data, size_t frames);
 
 } // namespace LibRetro

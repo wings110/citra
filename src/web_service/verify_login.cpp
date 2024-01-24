@@ -22,7 +22,7 @@ bool VerifyLogin(const std::string& host, const std::string& username, const std
         return username.empty();
     }
 
-    return *iter == username;
+    return username == *iter;
 }
 
 } // namespace WebService

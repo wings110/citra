@@ -9,17 +9,15 @@
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QVariant>
+#include "citra_qt/multiplayer/chat_room.h"
 #include "citra_qt/multiplayer/validation.h"
+#include "network/network.h"
 
 namespace Ui {
 class HostRoom;
 }
 
 namespace Core {
-class System;
-}
-
-namespace Network {
 class AnnounceMultiplayerSession;
 }
 
@@ -36,8 +34,8 @@ class HostRoomWindow : public QDialog {
     Q_OBJECT
 
 public:
-    explicit HostRoomWindow(Core::System& system, QWidget* parent, QStandardItemModel* list,
-                            std::shared_ptr<Network::AnnounceMultiplayerSession> session);
+    explicit HostRoomWindow(QWidget* parent, QStandardItemModel* list,
+                            std::shared_ptr<Core::AnnounceMultiplayerSession> session);
     ~HostRoomWindow();
 
     /**
@@ -52,8 +50,7 @@ private:
     std::unique_ptr<Network::VerifyUser::Backend> CreateVerifyBackend(bool use_validation) const;
 
     std::unique_ptr<Ui::HostRoom> ui;
-    Core::System& system;
-    std::weak_ptr<Network::AnnounceMultiplayerSession> announce_multiplayer_session;
+    std::weak_ptr<Core::AnnounceMultiplayerSession> announce_multiplayer_session;
     QStandardItemModel* game_list;
     ComboBoxProxyModel* proxy;
     Validation validation;

@@ -9,12 +9,11 @@
 #include "citra_qt/compatdb.h"
 #include "common/telemetry.h"
 #include "core/core.h"
-#include "core/telemetry_session.h"
 #include "ui_compatdb.h"
 
-CompatDB::CompatDB(Core::TelemetrySession& telemetry_session_, QWidget* parent)
+CompatDB::CompatDB(QWidget* parent)
     : QWizard(parent, Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowSystemMenuHint),
-      ui{std::make_unique<Ui::CompatDB>()}, telemetry_session{telemetry_session_} {
+      ui{std::make_unique<Ui::CompatDB>()} {
     ui->setupUi(this);
     connect(ui->radioButton_Perfect, &QRadioButton::clicked, this, &CompatDB::EnableNext);
     connect(ui->radioButton_Great, &QRadioButton::clicked, this, &CompatDB::EnableNext);
@@ -52,15 +51,16 @@ void CompatDB::Submit() {
     case CompatDBPage::Final:
         back();
         LOG_DEBUG(Frontend, "Compatibility Rating: {}", compatibility->checkedId());
-        telemetry_session.AddField(Common::Telemetry::FieldType::UserFeedback, "Compatibility",
-                                   compatibility->checkedId());
+        Core::System::GetInstance().TelemetrySession().AddField(
+            Common::Telemetry::FieldType::UserFeedback, "Compatibility",
+            compatibility->checkedId());
 
         button(NextButton)->setEnabled(false);
         button(NextButton)->setText(tr("Submitting"));
         button(CancelButton)->setVisible(false);
 
-        testcase_watcher.setFuture(
-            QtConcurrent::run([this] { return telemetry_session.SubmitTestcase(); }));
+        testcase_watcher.setFuture(QtConcurrent::run(
+            [] { return Core::System::GetInstance().TelemetrySession().SubmitTestcase(); }));
         break;
     default:
         LOG_ERROR(Frontend, "Unexpected page: {}", currentId());

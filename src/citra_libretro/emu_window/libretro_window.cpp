@@ -9,8 +9,8 @@
 #include "citra_libretro/citra_libretro.h"
 #include "citra_libretro/environment.h"
 #include "citra_libretro/input/input_factory.h"
-#include "common/settings.h"
 #include "core/3ds.h"
+#include "core/settings.h"
 #include "video_core/renderer_opengl/gl_state.h"
 
 
@@ -51,32 +51,27 @@ void ResetGLState() {
     glActiveTexture(GL_TEXTURE0);
 }
 
-EmuWindow_LibRetro::EmuWindow_LibRetro(bool useOpenGL_) {
-    useOpenGL = useOpenGL_;
-    strict_context_required = true;
-    window_info.type = Frontend::WindowSystemType::LibRetro;
-}
+EmuWindow_LibRetro::EmuWindow_LibRetro() {}
 
 EmuWindow_LibRetro::~EmuWindow_LibRetro() {}
 
 void EmuWindow_LibRetro::SwapBuffers() {
     submittedFrame = true;
 
-    if (useOpenGL) {
-        auto current_state = OpenGL::OpenGLState::GetCurState();
-        ResetGLState();
-        if (enableEmulatedPointer) {
-            tracker->Render(width, height);
-        }
-        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
-                               static_cast<unsigned>(height), 0);
-        ResetGLState();
-        current_state.Apply();
-    } else {
-        LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID,
-                                static_cast<unsigned>(width),
-                                static_cast<unsigned>(height), 0);
+    auto current_state = OpenGL::OpenGLState::GetCurState();
+
+    ResetGLState();
+
+    if (enableEmulatedPointer) {
+        tracker->Render(width, height);
     }
+
+    LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
+                               static_cast<unsigned>(height), 0);
+
+    ResetGLState();
+
+    current_state.Apply();
 }
 
 void EmuWindow_LibRetro::SetupFramebuffer() {
@@ -132,13 +127,13 @@ void EmuWindow_LibRetro::UpdateLayout() {
     unsigned baseX;
     unsigned baseY;
 
-    float scaling = Settings::values.resolution_factor.GetValue();
+    float scaling = Settings::values.resolution_factor;
 
-    bool swapped = Settings::values.swap_screen.GetValue();
+    bool swapped = Settings::values.swap_screen;
 
-    enableEmulatedPointer = useOpenGL;
+    enableEmulatedPointer = true;
 
-    switch (Settings::values.layout_option.GetValue()) {
+    switch (Settings::values.layout_option) {
     case Settings::LayoutOption::SingleScreen:
         if (swapped) { // Bottom screen visible
             baseX = Core::kScreenBottomWidth;
@@ -198,6 +193,8 @@ void EmuWindow_LibRetro::UpdateLayout() {
         LOG_CRITICAL(Frontend, "Failed to update 3DS layout in frontend!");
     }
 
+    NotifyClientAreaSizeChanged(std::pair<unsigned, unsigned>(baseX, baseY));
+
     width = baseX;
     height = baseY;
 
@@ -227,9 +224,7 @@ bool EmuWindow_LibRetro::HasSubmittedFrame() {
 }
 
 void EmuWindow_LibRetro::CreateContext() {
-    if (useOpenGL) {
-        tracker = std::make_unique<LibRetro::Input::MouseTracker>();
-    }
+    tracker = std::make_unique<LibRetro::Input::MouseTracker>();
 
     doCleanFrame = true;
 }

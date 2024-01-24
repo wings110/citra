@@ -8,15 +8,22 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 #include "audio_core/audio_types.h"
+#ifdef HAVE_MF
+#include "audio_core/hle/wmf_decoder.h"
+#elif HAVE_FFMPEG
+#include "audio_core/hle/ffmpeg_decoder.h"
+#elif ANDROID
+#include "audio_core/hle/mediandk_decoder.h"
+#elif HAVE_FDK
+#include "audio_core/hle/fdk_decoder.h"
+#endif
 #include "audio_core/hle/common.h"
 #include "audio_core/hle/decoder.h"
-#include "audio_core/hle/faad2_decoder.h"
 #include "audio_core/hle/hle.h"
 #include "audio_core/hle/mixers.h"
 #include "audio_core/hle/shared_memory.h"
 #include "audio_core/hle/source.h"
 #include "audio_core/sink.h"
-#include "common/archives.h"
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/hash.h"
@@ -26,15 +33,12 @@
 
 SERIALIZE_EXPORT_IMPL(AudioCore::DspHle)
 
-using InterruptType = Service::DSP::InterruptType;
+using InterruptType = Service::DSP::DSP_DSP::InterruptType;
+using Service::DSP::DSP_DSP;
 
 namespace AudioCore {
 
-DspHle::DspHle()
-    : DspHle(Core::System::GetInstance(), Core::System::GetInstance().Memory(),
-             Core::System::GetInstance().CoreTiming()) {}
-
-DspHle::DspHle(Core::System& system) : DspHle(system, system.Memory(), system.CoreTiming()) {}
+DspHle::DspHle() : DspHle(Core::System::GetInstance().Memory()) {}
 
 template <class Archive>
 void DspHle::serialize(Archive& ar, const unsigned int) {
@@ -52,21 +56,20 @@ static constexpr u64 audio_frame_ticks = samples_per_frame * 4096 * 2ull; ///< U
 
 struct DspHle::Impl final {
 public:
-    explicit Impl(DspHle& parent, Memory::MemorySystem& memory, Core::Timing& timing);
+    explicit Impl(DspHle& parent, Memory::MemorySystem& memory);
     ~Impl();
 
     DspState GetDspState() const;
 
     u16 RecvData(u32 register_number);
     bool RecvDataIsReady(u32 register_number) const;
-    std::vector<u8> PipeRead(DspPipe pipe_number, std::size_t length);
+    std::vector<u8> PipeRead(DspPipe pipe_number, u32 length);
     std::size_t GetPipeReadableSize(DspPipe pipe_number) const;
-    void PipeWrite(DspPipe pipe_number, std::span<const u8> buffer);
+    void PipeWrite(DspPipe pipe_number, const std::vector<u8>& buffer);
 
     std::array<u8, Memory::DSP_RAM_SIZE>& GetDspMemory();
 
-    void SetInterruptHandler(
-        std::function<void(Service::DSP::InterruptType type, DspPipe pipe)> handler);
+    void SetServiceToInterrupt(std::weak_ptr<DSP_DSP> dsp);
 
 private:
     void ResetPipes();
@@ -95,12 +98,11 @@ private:
     HLE::Mixers mixers{};
 
     DspHle& parent;
-    Core::Timing& core_timing;
     Core::TimingEventType* tick_event{};
 
     std::unique_ptr<HLE::DecoderBase> decoder{};
 
-    std::function<void(Service::DSP::InterruptType type, DspPipe pipe)> interrupt_handler{};
+    std::weak_ptr<DSP_DSP> dsp_dsp{};
 
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
@@ -109,48 +111,54 @@ private:
         ar& dsp_memory.raw_memory;
         ar& sources;
         ar& mixers;
-        // interrupt_handler is reregistered when loading state from DSP_DSP
+        ar& dsp_dsp;
     }
     friend class boost::serialization::access;
 };
 
-static std::vector<std::function<std::unique_ptr<HLE::DecoderBase>(Memory::MemorySystem&)>>
-    decoder_backends = {
-        [](Memory::MemorySystem& memory) -> std::unique_ptr<HLE::DecoderBase> {
-            return std::make_unique<HLE::FAAD2Decoder>(memory);
-        },
-};
-
-DspHle::Impl::Impl(DspHle& parent_, Memory::MemorySystem& memory, Core::Timing& timing)
-    : parent(parent_), core_timing(timing) {
+DspHle::Impl::Impl(DspHle& parent_, Memory::MemorySystem& memory) : parent(parent_) {
     dsp_memory.raw_memory.fill(0);
 
     for (auto& source : sources) {
         source.SetMemory(memory);
     }
 
-    for (auto& factory : decoder_backends) {
-        decoder = factory(memory);
-        if (decoder && decoder->IsValid()) {
-            break;
-        }
+#if defined(HAVE_MF) && defined(HAVE_FFMPEG)
+    decoder = std::make_unique<HLE::WMFDecoder>(memory);
+    if (!decoder->IsValid()) {
+        LOG_WARNING(Audio_DSP, "Unable to load MediaFoundation. Attempting to load FFMPEG instead");
+        decoder = std::make_unique<HLE::FFMPEGDecoder>(memory);
     }
+#elif defined(HAVE_MF)
+    decoder = std::make_unique<HLE::WMFDecoder>(memory);
+#elif defined(HAVE_FFMPEG)
+    decoder = std::make_unique<HLE::FFMPEGDecoder>(memory);
+#elif ANDROID
+    decoder = std::make_unique<HLE::MediaNDKDecoder>(memory);
+#elif defined(HAVE_FDK)
+    decoder = std::make_unique<HLE::FDKDecoder>(memory);
+#else
+    LOG_WARNING(Audio_DSP, "No decoder found, this could lead to missing audio");
+    decoder = std::make_unique<HLE::NullDecoder>();
+#endif // HAVE_MF
 
-    if (!decoder || !decoder->IsValid()) {
+    if (!decoder->IsValid()) {
         LOG_WARNING(Audio_DSP,
                     "Unable to load any decoders, this could cause missing audio in some games");
         decoder = std::make_unique<HLE::NullDecoder>();
     }
 
+    Core::Timing& timing = Core::System::GetInstance().CoreTiming();
     tick_event =
-        core_timing.RegisterEvent("AudioCore::DspHle::tick_event", [this](u64, s64 cycles_late) {
+        timing.RegisterEvent("AudioCore::DspHle::tick_event", [this](u64, s64 cycles_late) {
             this->AudioTickCallback(cycles_late);
         });
-    core_timing.ScheduleEvent(audio_frame_ticks, tick_event);
+    timing.ScheduleEvent(audio_frame_ticks, tick_event);
 }
 
 DspHle::Impl::~Impl() {
-    core_timing.UnscheduleEvent(tick_event, 0);
+    Core::Timing& timing = Core::System::GetInstance().CoreTiming();
+    timing.UnscheduleEvent(tick_event, 0);
 }
 
 DspState DspHle::Impl::GetDspState() const {
@@ -180,7 +188,7 @@ bool DspHle::Impl::RecvDataIsReady(u32 register_number) const {
     return true;
 }
 
-std::vector<u8> DspHle::Impl::PipeRead(DspPipe pipe_number, std::size_t length) {
+std::vector<u8> DspHle::Impl::PipeRead(DspPipe pipe_number, u32 length) {
     const std::size_t pipe_index = static_cast<std::size_t>(pipe_number);
 
     if (pipe_index >= num_dsp_pipe) {
@@ -222,7 +230,7 @@ size_t DspHle::Impl::GetPipeReadableSize(DspPipe pipe_number) const {
     return pipe_data[pipe_index].size();
 }
 
-void DspHle::Impl::PipeWrite(DspPipe pipe_number, std::span<const u8> buffer) {
+void DspHle::Impl::PipeWrite(DspPipe pipe_number, const std::vector<u8>& buffer) {
     switch (pipe_number) {
     case DspPipe::Audio: {
         if (buffer.size() != 4) {
@@ -264,7 +272,6 @@ void DspHle::Impl::PipeWrite(DspPipe pipe_number, std::span<const u8> buffer) {
         case StateChange::Sleep:
             LOG_INFO(Audio_DSP, "Application has requested sleep of DSP hardware");
             UNIMPLEMENTED();
-            AudioPipeWriteStructAddresses();
             dsp_state = DspState::Sleeping;
             break;
         default:
@@ -279,26 +286,24 @@ void DspHle::Impl::PipeWrite(DspPipe pipe_number, std::span<const u8> buffer) {
     }
     case DspPipe::Binary: {
         // TODO(B3N30): Make this async, and signal the interrupt
-        HLE::BinaryMessage request{};
+        HLE::BinaryRequest request;
         if (sizeof(request) != buffer.size()) {
             LOG_CRITICAL(Audio_DSP, "got binary pipe with wrong size {}", buffer.size());
             UNIMPLEMENTED();
             return;
         }
         std::memcpy(&request, buffer.data(), buffer.size());
-        if (request.header.codec != HLE::DecoderCodec::DecodeAAC) {
-            LOG_CRITICAL(Audio_DSP, "got unknown codec {}", static_cast<u16>(request.header.codec));
+        if (request.codec != HLE::DecoderCodec::AAC) {
+            LOG_CRITICAL(Audio_DSP, "got unknown codec {}", static_cast<u16>(request.codec));
             UNIMPLEMENTED();
             return;
         }
-        std::optional<HLE::BinaryMessage> response = decoder->ProcessRequest(request);
+        std::optional<HLE::BinaryResponse> response = decoder->ProcessRequest(request);
         if (response) {
-            const HLE::BinaryMessage& value = *response;
+            const HLE::BinaryResponse& value = *response;
             pipe_data[static_cast<u32>(pipe_number)].resize(sizeof(value));
             std::memcpy(pipe_data[static_cast<u32>(pipe_number)].data(), &value, sizeof(value));
         }
-
-        interrupt_handler(InterruptType::Pipe, DspPipe::Binary);
         break;
     }
     default:
@@ -313,9 +318,8 @@ std::array<u8, Memory::DSP_RAM_SIZE>& DspHle::Impl::GetDspMemory() {
     return dsp_memory.raw_memory;
 }
 
-void DspHle::Impl::SetInterruptHandler(
-    std::function<void(Service::DSP::InterruptType type, DspPipe pipe)> handler) {
-    interrupt_handler = handler;
+void DspHle::Impl::SetServiceToInterrupt(std::weak_ptr<DSP_DSP> dsp) {
+    dsp_dsp = std::move(dsp);
 }
 
 void DspHle::Impl::ResetPipes() {
@@ -362,7 +366,9 @@ void DspHle::Impl::AudioPipeWriteStructAddresses() {
         WriteU16(DspPipe::Audio, addr);
     }
     // Signal that we have data on this pipe.
-    interrupt_handler(InterruptType::Pipe, DspPipe::Audio);
+    if (auto service = dsp_dsp.lock()) {
+        service->SignalInterrupt(InterruptType::Pipe, DspPipe::Audio);
+    }
 }
 
 size_t DspHle::Impl::CurrentRegionIndex() const {
@@ -432,21 +438,25 @@ bool DspHle::Impl::Tick() {
 
     parent.OutputFrame(std::move(current_frame));
 
-    return GetDspState() == DspState::On;
+    return true;
 }
 
 void DspHle::Impl::AudioTickCallback(s64 cycles_late) {
     if (Tick()) {
         // TODO(merry): Signal all the other interrupts as appropriate.
-        interrupt_handler(InterruptType::Pipe, DspPipe::Audio);
+        if (auto service = dsp_dsp.lock()) {
+            service->SignalInterrupt(InterruptType::Pipe, DspPipe::Audio);
+            // HACK(merry): Added to prevent regressions. Will remove soon.
+            service->SignalInterrupt(InterruptType::Pipe, DspPipe::Binary);
+        }
     }
 
     // Reschedule recurrent event
-    core_timing.ScheduleEvent(audio_frame_ticks - cycles_late, tick_event);
+    Core::Timing& timing = Core::System::GetInstance().CoreTiming();
+    timing.ScheduleEvent(audio_frame_ticks - cycles_late, tick_event);
 }
 
-DspHle::DspHle(Core::System& system, Memory::MemorySystem& memory, Core::Timing& timing)
-    : DspInterface(system), impl(std::make_unique<Impl>(*this, memory, timing)) {}
+DspHle::DspHle(Memory::MemorySystem& memory) : impl(std::make_unique<Impl>(*this, memory)) {}
 DspHle::~DspHle() = default;
 
 u16 DspHle::RecvData(u32 register_number) {
@@ -461,7 +471,7 @@ void DspHle::SetSemaphore(u16 semaphore_value) {
     // Do nothing in HLE
 }
 
-std::vector<u8> DspHle::PipeRead(DspPipe pipe_number, std::size_t length) {
+std::vector<u8> DspHle::PipeRead(DspPipe pipe_number, u32 length) {
     return impl->PipeRead(pipe_number, length);
 }
 
@@ -469,7 +479,7 @@ size_t DspHle::GetPipeReadableSize(DspPipe pipe_number) const {
     return impl->GetPipeReadableSize(pipe_number);
 }
 
-void DspHle::PipeWrite(DspPipe pipe_number, std::span<const u8> buffer) {
+void DspHle::PipeWrite(DspPipe pipe_number, const std::vector<u8>& buffer) {
     impl->PipeWrite(pipe_number, buffer);
 }
 
@@ -477,12 +487,11 @@ std::array<u8, Memory::DSP_RAM_SIZE>& DspHle::GetDspMemory() {
     return impl->GetDspMemory();
 }
 
-void DspHle::SetInterruptHandler(
-    std::function<void(Service::DSP::InterruptType type, DspPipe pipe)> handler) {
-    impl->SetInterruptHandler(handler);
-};
+void DspHle::SetServiceToInterrupt(std::weak_ptr<DSP_DSP> dsp) {
+    impl->SetServiceToInterrupt(std::move(dsp));
+}
 
-void DspHle::LoadComponent(std::span<const u8> component_data) {
+void DspHle::LoadComponent(const std::vector<u8>& component_data) {
     // HLE doesn't need DSP program. Only log some info here
     LOG_INFO(Service_DSP, "Firmware hash: {:#018x}",
              Common::ComputeHash64(component_data.data(), component_data.size()));

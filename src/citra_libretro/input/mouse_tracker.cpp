@@ -9,9 +9,8 @@
 #include "citra_libretro/core_settings.h"
 #include "citra_libretro/environment.h"
 #include "citra_libretro/input/mouse_tracker.h"
-#include "common/settings.h"
 
-#include "video_core/shader/generator/glsl_shader_gen.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 
 namespace LibRetro {
 
@@ -23,7 +22,7 @@ MouseTracker::MouseTracker() {
 
     std::string vertex;
     if (Settings::values.use_gles) {
-        vertex += fragment_shader_precision_OES;
+        vertex += ::OpenGL::fragment_shader_precision_OES;
     }
 
     vertex += R"(
@@ -37,7 +36,7 @@ MouseTracker::MouseTracker() {
 
     std::string fragment;
     if (Settings::values.use_gles) {
-        fragment += fragment_shader_precision_OES;
+        fragment += ::OpenGL::fragment_shader_precision_OES;
     }
     fragment += R"(
         out vec4 color;

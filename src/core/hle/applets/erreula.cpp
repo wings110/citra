@@ -9,7 +9,7 @@
 
 namespace HLE::Applets {
 
-ResultCode ErrEula::ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) {
+ResultCode ErrEula::ReceiveParameter(const Service::APT::MessageParameter& parameter) {
     if (parameter.signal != Service::APT::SignalType::Request) {
         LOG_ERROR(Service_APT, "unsupported signal {}", parameter.signal);
         UNIMPLEMENTED();
@@ -23,7 +23,7 @@ ResultCode ErrEula::ReceiveParameterImpl(const Service::APT::MessageParameter& p
     Service::APT::CaptureBufferInfo capture_info;
     ASSERT(sizeof(capture_info) == parameter.buffer.size());
 
-    std::memcpy(&capture_info, parameter.buffer.data(), sizeof(capture_info));
+    memcpy(&capture_info, parameter.buffer.data(), sizeof(capture_info));
 
     // TODO: allocated memory never released
     using Kernel::MemoryPermission;
@@ -33,32 +33,34 @@ ResultCode ErrEula::ReceiveParameterImpl(const Service::APT::MessageParameter& p
         "ErrEula Memory");
 
     // Send the response message with the newly created SharedMemory
-    SendParameter({
-        .sender_id = id,
-        .destination_id = parent,
-        .signal = Service::APT::SignalType::Response,
-        .object = framebuffer_memory,
-    });
+    Service::APT::MessageParameter result;
+    result.signal = Service::APT::SignalType::Response;
+    result.buffer.clear();
+    result.destination_id = Service::APT::AppletId::Application;
+    result.sender_id = id;
+    result.object = framebuffer_memory;
 
+    SendParameter(result);
     return RESULT_SUCCESS;
 }
 
-ResultCode ErrEula::Start(const Service::APT::MessageParameter& parameter) {
-    startup_param = parameter.buffer;
+ResultCode ErrEula::StartImpl(const Service::APT::AppletStartupParameter& parameter) {
+    is_running = true;
 
     // TODO(Subv): Set the expected fields in the response buffer before resending it to the
     // application.
     // TODO(Subv): Reverse the parameter format for the ErrEula applet
 
-    // Let the application know that we're closing.
-    Finalize();
-    return RESULT_SUCCESS;
-}
+    // Let the application know that we're closing
+    Service::APT::MessageParameter message;
+    message.buffer.resize(parameter.buffer.size());
+    std::fill(message.buffer.begin(), message.buffer.end(), 0);
+    message.signal = Service::APT::SignalType::WakeupByExit;
+    message.destination_id = Service::APT::AppletId::Application;
+    message.sender_id = id;
+    SendParameter(message);
 
-ResultCode ErrEula::Finalize() {
-    std::vector<u8> buffer(startup_param.size());
-    std::fill(buffer.begin(), buffer.end(), 0);
-    CloseApplet(nullptr, buffer);
+    is_running = false;
     return RESULT_SUCCESS;
 }
 

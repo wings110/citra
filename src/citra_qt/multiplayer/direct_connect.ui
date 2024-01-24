@@ -27,10 +27,19 @@
           <number>0</number>
          </property>
          <item>
+          <widget class="QComboBox" name="connection_type">
+           <item>
+            <property name="text">
+             <string>IP Address</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
           <widget class="QWidget" name="ip_container" native="true">
            <layout class="QHBoxLayout" name="ip_layout">
             <property name="leftMargin">
-             <number>0</number>
+             <number>5</number>
             </property>
             <property name="topMargin">
              <number>0</number>
@@ -44,17 +53,17 @@
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Server Address</string>
+               <string>IP</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QLineEdit" name="ip">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Server address of the host&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;IPv4 address of the host&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="maxLength">
-               <number>253</number>
+               <number>16</number>
               </property>
              </widget>
             </item>
@@ -75,12 +84,6 @@
               </property>
               <property name="placeholderText">
                <string>24872</string>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>65</width>
-                <height>50</height>
-               </size>
               </property>
              </widget>
             </item>

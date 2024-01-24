@@ -33,11 +33,10 @@ GameListWorker::GameListWorker(QVector<UISettings::GameDir>& game_dirs,
 GameListWorker::~GameListWorker() = default;
 
 void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsigned int recursion,
-                                             GameListDir* parent_dir,
-                                             Service::FS::MediaType media_type) {
-    const auto callback = [this, recursion, parent_dir,
-                           media_type](u64* num_entries_out, const std::string& directory,
-                                       const std::string& virtual_name) -> bool {
+                                             GameListDir* parent_dir) {
+    const auto callback = [this, recursion, parent_dir](u64* num_entries_out,
+                                                        const std::string& directory,
+                                                        const std::string& virtual_name) -> bool {
         if (stop_processing) {
             // Breaks the callback loop.
             return false;
@@ -82,16 +81,7 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
                 loader->ReadIcon(smdh);
             }
 
-            const auto system_title = ((program_id >> 32) & 0xFFFFFFFF) == 0x00040010;
-            if (Loader::IsValidSMDH(smdh)) {
-                if (system_title) {
-                    auto smdh_struct = reinterpret_cast<Loader::SMDH*>(smdh.data());
-                    if (!(smdh_struct->flags & Loader::SMDH::Flags::Visible)) {
-                        // Skip system titles without the visible flag.
-                        return true;
-                    }
-                }
-            } else if (UISettings::values.game_list_hide_no_icon || system_title) {
+            if (!Loader::IsValidSMDH(smdh) && UISettings::values.game_list_hide_no_icon) {
                 // Skip this invalid entry
                 return true;
             }
@@ -106,7 +96,7 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
             emit EntryReady(
                 {
                     new GameListItemPath(QString::fromStdString(physical_name), smdh, program_id,
-                                         extdata_id, media_type),
+                                         extdata_id),
                     new GameListItemCompat(compatibility),
                     new GameListItemRegion(smdh),
                     new GameListItem(
@@ -117,7 +107,7 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
 
         } else if (is_dir && recursion > 0) {
             watch_list.append(QString::fromStdString(physical_name));
-            AddFstEntriesToGameList(physical_name, recursion - 1, parent_dir, media_type);
+            AddFstEntriesToGameList(physical_name, recursion - 1, parent_dir);
         }
 
         return true;
@@ -145,10 +135,8 @@ void GameListWorker::run() {
             watch_list.append(demos_path);
             auto* const game_list_dir = new GameListDir(game_dir, GameListItemType::InstalledDir);
             emit DirEntryReady(game_list_dir);
-            AddFstEntriesToGameList(games_path.toStdString(), 2, game_list_dir,
-                                    Service::FS::MediaType::SDMC);
-            AddFstEntriesToGameList(demos_path.toStdString(), 2, game_list_dir,
-                                    Service::FS::MediaType::SDMC);
+            AddFstEntriesToGameList(games_path.toStdString(), 2, game_list_dir);
+            AddFstEntriesToGameList(demos_path.toStdString(), 2, game_list_dir);
         } else if (game_dir.path == QStringLiteral("SYSTEM")) {
             QString path =
                 QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::NANDDir)) +
@@ -156,14 +144,13 @@ void GameListWorker::run() {
             watch_list.append(path);
             auto* const game_list_dir = new GameListDir(game_dir, GameListItemType::SystemDir);
             emit DirEntryReady(game_list_dir);
-            AddFstEntriesToGameList(path.toStdString(), 2, game_list_dir,
-                                    Service::FS::MediaType::NAND);
+            AddFstEntriesToGameList(path.toStdString(), 2, game_list_dir);
         } else {
             watch_list.append(game_dir.path);
             auto* const game_list_dir = new GameListDir(game_dir);
             emit DirEntryReady(game_list_dir);
             AddFstEntriesToGameList(game_dir.path.toStdString(), game_dir.deep_scan ? 256 : 0,
-                                    game_list_dir, Service::FS::MediaType::GameCard);
+                                    game_list_dir);
         }
     }
 

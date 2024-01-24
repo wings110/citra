@@ -9,5 +9,5 @@ namespace Frontend {
  * Registers default, frontend-independent applet implementations.
  * Will be replaced later if any frontend-specific implementation is available.
  */
-void RegisterDefaultApplets(Core::System& system);
+void RegisterDefaultApplets();
 } // namespace Frontend

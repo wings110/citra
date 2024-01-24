@@ -34,6 +34,7 @@ public:
     void Flush();
 
 private:
+    unsigned int sample_rate;
     std::unique_ptr<soundtouch::SoundTouch> sound_touch;
     double stretch_ratio = 1.0;
 };

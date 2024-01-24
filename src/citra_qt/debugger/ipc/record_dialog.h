@@ -4,7 +4,6 @@
 
 #include <array>
 #include <memory>
-#include <span>
 #include <string>
 #include <vector>
 #include <QDialog>
@@ -29,7 +28,7 @@ public:
 
 private:
     QString FormatObject(const IPCDebugger::ObjectInfo& object) const;
-    QString FormatCmdbuf(std::span<const u32> cmdbuf) const;
+    QString FormatCmdbuf(const std::vector<u32>& cmdbuf) const;
     void UpdateCmdbufDisplay();
 
     std::unique_ptr<Ui::RecordDialog> ui;

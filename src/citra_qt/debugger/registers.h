@@ -15,15 +15,11 @@ namespace Ui {
 class ARMRegisters;
 }
 
-namespace Core {
-class System;
-}
-
 class RegistersWidget : public QDockWidget {
     Q_OBJECT
 
 public:
-    explicit RegistersWidget(const Core::System& system, QWidget* parent = nullptr);
+    explicit RegistersWidget(QWidget* parent = nullptr);
     ~RegistersWidget();
 
 public slots:
@@ -41,7 +37,7 @@ private:
     void UpdateVFPSystemRegisterValues();
 
     std::unique_ptr<Ui::ARMRegisters> cpu_regs_ui;
-    const Core::System& system;
+
     QTreeWidget* tree;
 
     QTreeWidgetItem* core_registers;

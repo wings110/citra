@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <span>
 #include <string>
 #include <vector>
 #include "common/common_types.h"
@@ -14,6 +13,9 @@
 namespace Loader {
 enum class ResultStatus;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
 
 namespace FileSys {
 
@@ -83,7 +85,7 @@ public:
 #pragma pack(pop)
 
     Loader::ResultStatus Load(const std::string& file_path);
-    Loader::ResultStatus Load(std::span<const u8> file_data, std::size_t offset = 0);
+    Loader::ResultStatus Load(const std::vector<u8>& file_data, std::size_t offset = 0);
     Loader::ResultStatus Save(const std::string& file_path);
 
     u64 GetTitleID() const;
@@ -98,7 +100,6 @@ public:
     u16 GetContentTypeByIndex(std::size_t index) const;
     u64 GetContentSizeByIndex(std::size_t index) const;
     std::array<u8, 16> GetContentCTRByIndex(std::size_t index) const;
-    bool HasEncryptedContent() const;
 
     void SetTitleID(u64 title_id);
     void SetTitleType(u32 type);

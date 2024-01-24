@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <QDialog>
 #include "core/frontend/applets/mii_selector.h"
 
@@ -24,7 +25,7 @@ private:
     QVBoxLayout* layout;
     QtMiiSelector* mii_selector;
     u32 return_code = 0;
-    std::vector<Mii::MiiData> miis;
+    std::vector<HLE::Applets::MiiData> miis;
 
     friend class QtMiiSelector;
 };

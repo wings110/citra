@@ -5,7 +5,6 @@
 #pragma once
 
 #include <memory>
-#include <unordered_map>
 #include <unordered_set>
 #include <QDialog>
 #include <QSortFilterProxyModel>
@@ -17,7 +16,7 @@ namespace Ui {
 class ChatRoom;
 }
 
-namespace Network {
+namespace Core {
 class AnnounceMultiplayerSession;
 }
 

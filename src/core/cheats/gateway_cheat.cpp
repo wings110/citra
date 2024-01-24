@@ -6,11 +6,8 @@
 #include <cmath>
 #include <fstream>
 #include <functional>
-#include <span>
 #include <string>
 #include <vector>
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream.hpp>
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
@@ -145,7 +142,7 @@ static inline void JokerOp(const GatewayCheat::CheatLine& line, State& state,
 }
 
 static inline void PatchOp(const GatewayCheat::CheatLine& line, State& state, Core::System& system,
-                           std::span<const GatewayCheat::CheatLine> cheat_lines) {
+                           const std::vector<GatewayCheat::CheatLine>& cheat_lines) {
     if (state.if_flag > 0) {
         // Skip over the additional patch lines
         state.current_line_nr += static_cast<int>(std::ceil(line.value / 8.0));
@@ -197,9 +194,9 @@ GatewayCheat::CheatLine::CheatLine(const std::string& line) {
         if (type_temp == "D" || type_temp == "d")
             sub_type_temp = line.substr(1, 1);
         type = static_cast<CheatType>(std::stoi(type_temp + sub_type_temp, 0, 16));
-        first = static_cast<u32>(std::stoul(line.substr(0, 8), 0, 16));
+        first = std::stoul(line.substr(0, 8), 0, 16);
         address = first & 0x0FFFFFFF;
-        value = static_cast<u32>(std::stoul(line.substr(9, 8), 0, 16));
+        value = std::stoul(line.substr(9, 8), 0, 16);
         cheat_line = line;
     } catch (const std::logic_error&) {
         type = CheatType::Null;
@@ -217,12 +214,13 @@ GatewayCheat::GatewayCheat(std::string name_, std::vector<CheatLine> cheat_lines
 GatewayCheat::GatewayCheat(std::string name_, std::string code, std::string comments_)
     : name(std::move(name_)), comments(std::move(comments_)) {
 
-    const auto code_lines = Common::SplitString(code, '\n');
+    std::vector<std::string> code_lines;
+    Common::SplitString(code, '\n', code_lines);
 
     std::vector<CheatLine> temp_cheat_lines;
-    for (const std::string& line : code_lines) {
-        if (!line.empty())
-            temp_cheat_lines.emplace_back(line);
+    for (std::size_t i = 0; i < code_lines.size(); ++i) {
+        if (!code_lines[i].empty())
+            temp_cheat_lines.emplace_back(code_lines[i]);
     }
     cheat_lines = std::move(temp_cheat_lines);
 }
@@ -464,10 +462,10 @@ std::string GatewayCheat::ToString() const {
         result += EnabledText;
         result += '\n';
     }
-    const auto comment_lines = Common::SplitString(comments, '\n');
-    for (const auto& comment_line : comment_lines) {
+    std::vector<std::string> comment_lines;
+    Common::SplitString(comments, '\n', comment_lines);
+    for (const auto& comment_line : comment_lines)
         result += "*" + comment_line + '\n';
-    }
     result += GetCode() + '\n';
     return result;
 }
@@ -475,9 +473,9 @@ std::string GatewayCheat::ToString() const {
 std::vector<std::unique_ptr<CheatBase>> GatewayCheat::LoadFile(const std::string& filepath) {
     std::vector<std::unique_ptr<CheatBase>> cheats;
 
-    boost::iostreams::stream<boost::iostreams::file_descriptor_source> file;
-    FileUtil::OpenFStream<std::ios_base::in>(file, filepath);
-    if (!file.is_open()) {
+    std::ifstream file;
+    OpenFStream(file, filepath, std::ios_base::in);
+    if (!file) {
         return cheats;
     }
 

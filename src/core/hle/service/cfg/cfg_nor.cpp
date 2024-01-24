@@ -11,12 +11,10 @@ namespace Service::CFG {
 
 CFG_NOR::CFG_NOR() : ServiceFramework("cfg:nor", 23) {
     static const FunctionInfo functions[] = {
-        // clang-format off
-        {0x0001, nullptr, "Initialize"},
-        {0x0002, nullptr, "Shutdown"},
-        {0x0005, nullptr, "ReadData"},
-        {0x0006, nullptr, "WriteData"},
-        // clang-format on
+        {0x00010040, nullptr, "Initialize"},
+        {0x00020000, nullptr, "Shutdown"},
+        {0x00050082, nullptr, "ReadData"},
+        {0x00060082, nullptr, "WriteData"},
     };
     RegisterHandlers(functions);
 }

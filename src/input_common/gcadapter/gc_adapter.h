@@ -9,7 +9,7 @@
 #include <functional>
 #include <mutex>
 #include <thread>
-#include <vector>
+#include <unordered_map>
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
 

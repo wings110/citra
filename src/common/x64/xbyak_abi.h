@@ -4,12 +4,9 @@
 
 #pragma once
 
-#include "common/arch.h"
-#if CITRA_ARCH(x86_64)
-
 #include <bitset>
 #include <initializer_list>
-#include <xbyak/xbyak.h>
+#include <xbyak.h>
 #include "common/assert.h"
 
 namespace Common::X64 {
@@ -161,10 +158,10 @@ struct ABIFrameInfo {
 
 inline ABIFrameInfo ABI_CalculateFrameSize(std::bitset<32> regs, std::size_t rsp_alignment,
                                            std::size_t needed_frame_size) {
-    const auto count = (regs & ABI_ALL_GPRS).count();
+    int count = (regs & ABI_ALL_GPRS).count();
     rsp_alignment -= count * 8;
     std::size_t subtraction = 0;
-    const auto xmm_count = (regs & ABI_ALL_XMMS).count();
+    int xmm_count = (regs & ABI_ALL_XMMS).count();
     if (xmm_count) {
         // If we have any XMMs to save, we must align the stack here.
         subtraction = rsp_alignment & 0xF;
@@ -231,5 +228,3 @@ inline void ABI_PopRegistersAndAdjustStack(Xbyak::CodeGenerator& code, std::bits
 }
 
 } // namespace Common::X64
-
-#endif // CITRA_ARCH(x86_64)

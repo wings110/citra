@@ -5,13 +5,11 @@
 #pragma once
 
 #include <map>
-#include <QKeySequence>
-#include <QString>
 
 class QDialog;
+class QKeySequence;
 class QSettings;
 class QShortcut;
-class QWidget;
 
 class HotkeyRegistry final {
 public:
@@ -47,7 +45,7 @@ public:
      *          will be the same. Thus, you shouldn't rely on the caller really being the
      *          QShortcut's parent.
      */
-    QShortcut* GetHotkey(const QString& group, const QString& action, QObject* widget);
+    QShortcut* GetHotkey(const QString& group, const QString& action, QWidget* widget);
 
     /**
      * Returns a QKeySequence object whose signal can be connected to QAction::setShortcut.
@@ -70,7 +68,6 @@ public:
 private:
     struct Hotkey {
         QKeySequence keyseq;
-        QString controller_keyseq;
         QShortcut* shortcut = nullptr;
         Qt::ShortcutContext context = Qt::WindowShortcut;
     };

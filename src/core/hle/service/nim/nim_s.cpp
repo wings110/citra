@@ -11,13 +11,11 @@ namespace Service::NIM {
 
 NIM_S::NIM_S() : ServiceFramework("nim:s", 1) {
     const FunctionInfo functions[] = {
-        // clang-format off
-        {0x000A, nullptr, "CheckSysupdateAvailableSOAP"},
-        {0x0016, nullptr, "ListTitles"},
-        {0x0029, nullptr, "AccountCheckBalanceSOAP"},
-        {0x002D, nullptr, "DownloadTickets"},
-        {0x0042, nullptr, "StartDownload"},
-        // clang-format on
+        {0x000A0000, nullptr, "CheckSysupdateAvailableSOAP"},
+        {0x0016020A, nullptr, "ListTitles"},
+        {0x00290000, nullptr, "AccountCheckBalanceSOAP"},
+        {0x002D0042, nullptr, "DownloadTickets"},
+        {0x00420240, nullptr, "StartDownload"},
     };
     RegisterHandlers(functions);
 }
