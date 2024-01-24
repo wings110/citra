@@ -11,6 +11,8 @@
 #include "core/loader/elf.h"
 #include "core/loader/ncch.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 namespace Loader {
 
 FileType IdentifyFile(FileUtil::IOFile& file) {

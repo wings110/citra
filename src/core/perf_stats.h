@@ -42,8 +42,6 @@ public:
 
     Results GetAndResetStats(std::chrono::microseconds current_system_time_us);
 
-    Results GetLastStats();
-
     /**
      * Returns the arithmetic mean of all frametime values stored in the performance history.
      */
@@ -84,9 +82,6 @@ private:
     Clock::time_point frame_begin = reset_point;
     /// Total visible duration (including frame-limiting, etc.) of the previous system frame
     Clock::duration previous_frame_length = Clock::duration::zero();
-
-    /// Last recorded performance statistics.
-    Results last_stats;
 };
 
 class FrameLimiter {

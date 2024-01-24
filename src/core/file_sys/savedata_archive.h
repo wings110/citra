@@ -10,6 +10,9 @@
 #include "core/file_sys/file_backend.h"
 #include "core/hle/result.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
+
 namespace FileSys {
 
 /// Archive backend for general save data archive type (SaveData and SystemSaveData)

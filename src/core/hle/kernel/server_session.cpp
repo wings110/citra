@@ -52,7 +52,7 @@ ResultVal<std::shared_ptr<ServerSession>> ServerSession::Create(KernelSystem& ke
     server_session->name = std::move(name);
     server_session->parent = nullptr;
 
-    return server_session;
+    return MakeResult(std::move(server_session));
 }
 
 bool ServerSession::ShouldWait(const Thread* thread) const {

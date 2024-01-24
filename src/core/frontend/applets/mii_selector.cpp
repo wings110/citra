@@ -11,16 +11,15 @@
 
 namespace Frontend {
 
-void MiiSelector::Finalize(u32 return_code, Mii::MiiData mii) {
+void MiiSelector::Finalize(u32 return_code, HLE::Applets::MiiData mii) {
     data = {return_code, mii};
 }
 
-std::vector<Mii::MiiData> LoadMiis() {
-    std::vector<Mii::MiiData> miis;
+std::vector<HLE::Applets::MiiData> LoadMiis() {
+    std::vector<HLE::Applets::MiiData> miis;
 
     std::string nand_directory{FileUtil::GetUserPath(FileUtil::UserPath::NANDDir)};
-    FileSys::ArchiveFactory_ExtSaveData extdata_archive_factory(nand_directory,
-                                                                FileSys::ExtSaveDataType::Shared);
+    FileSys::ArchiveFactory_ExtSaveData extdata_archive_factory(nand_directory, true);
 
     auto archive_result = extdata_archive_factory.Open(Service::PTM::ptm_shared_extdata_id, 0);
     if (archive_result.Succeeded()) {
@@ -37,11 +36,11 @@ std::vector<Mii::MiiData> LoadMiis() {
             u32 saved_miis_offset = 0x8;
             // The Mii Maker has a 100 Mii limit on the 3ds
             for (int i = 0; i < 100; ++i) {
-                Mii::MiiData mii;
+                HLE::Applets::MiiData mii;
                 std::array<u8, sizeof(mii)> mii_raw;
                 file->Read(saved_miis_offset, sizeof(mii), mii_raw.data());
                 std::memcpy(&mii, mii_raw.data(), sizeof(mii));
-                if (mii.mii_id != 0u) {
+                if (mii.mii_id != 0) {
                     miis.push_back(mii);
                 }
                 saved_miis_offset += sizeof(mii);

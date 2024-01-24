@@ -11,15 +11,11 @@ namespace Ui {
 class MoviePlayDialog;
 }
 
-namespace Core {
-class System;
-}
-
 class MoviePlayDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit MoviePlayDialog(QWidget* parent, GameList* game_list, const Core::System& system);
+    explicit MoviePlayDialog(QWidget* parent, GameList* game_list);
     ~MoviePlayDialog() override;
 
     QString GetMoviePath() const;
@@ -31,5 +27,4 @@ private:
 
     std::unique_ptr<Ui::MoviePlayDialog> ui;
     GameList* game_list;
-    const Core::System& system;
 };

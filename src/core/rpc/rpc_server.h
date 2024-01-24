@@ -6,37 +6,35 @@
 
 #include <condition_variable>
 #include <memory>
-#include <span>
-#include "common/polyfill_thread.h"
+#include <mutex>
+#include <thread>
 #include "common/threadsafe_queue.h"
+#include "core/rpc/server.h"
 
-namespace Core {
-class System;
-}
-
-namespace Core::RPC {
+namespace RPC {
 
 class Packet;
 struct PacketHeader;
 
 class RPCServer {
 public:
-    explicit RPCServer(Core::System& system);
+    RPCServer();
     ~RPCServer();
 
     void QueueRequest(std::unique_ptr<RPC::Packet> request);
 
 private:
+    void Start();
+    void Stop();
     void HandleReadMemory(Packet& packet, u32 address, u32 data_size);
-    void HandleWriteMemory(Packet& packet, u32 address, std::span<const u8> data);
+    void HandleWriteMemory(Packet& packet, u32 address, const u8* data, u32 data_size);
     bool ValidatePacket(const PacketHeader& packet_header);
     void HandleSingleRequest(std::unique_ptr<Packet> request);
-    void HandleRequestsLoop(std::stop_token stop_token);
+    void HandleRequestsLoop();
 
-private:
-    Core::System& system;
-    Common::SPSCQueue<std::unique_ptr<Packet>, true> request_queue;
-    std::jthread request_handler_thread;
+    Server server;
+    Common::SPSCQueue<std::unique_ptr<Packet>> request_queue;
+    std::thread request_handler_thread;
 };
 
-} // namespace Core::RPC
+} // namespace RPC

@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include "common/arch.h"
-#if CITRA_ARCH(x86_64)
-
 #include <type_traits>
-#include <xbyak/xbyak.h>
+#include <xbyak.h>
 #include "common/x64/xbyak_abi.h"
 
 namespace Common::X64 {
@@ -48,5 +45,3 @@ inline void CallFarFunction(Xbyak::CodeGenerator& code, const T f) {
 }
 
 } // namespace Common::X64
-
-#endif // CITRA_ARCH(x86_64)

@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <span>
 #include <vector>
 #include "common/common_types.h"
 #include "common/swap.h"
@@ -119,13 +118,13 @@ static_assert(sizeof(EAPoLLogoffPacket) == 0x298, "EAPoLLogoffPacket has the wro
  * Generates an unencrypted 802.11 data payload.
  * @returns The generated frame payload.
  */
-std::vector<u8> GenerateDataPayload(std::span<const u8> data, u8 channel, u16 dest_node,
+std::vector<u8> GenerateDataPayload(const std::vector<u8>& data, u8 channel, u16 dest_node,
                                     u16 src_node, u16 sequence_number);
 
 /*
  * Returns the SecureDataHeader stored in an 802.11 data frame.
  */
-SecureDataHeader ParseSecureDataHeader(std::span<const u8> data);
+SecureDataHeader ParseSecureDataHeader(const std::vector<u8>& data);
 
 /*
  * Generates an unencrypted 802.11 data frame body with the EAPoL-Start format for UDS
@@ -137,19 +136,19 @@ std::vector<u8> GenerateEAPoLStartFrame(u16 association_id, const NodeInfo& node
 /*
  * Returns the EtherType of the specified 802.11 frame.
  */
-EtherType GetFrameEtherType(std::span<const u8> frame);
+EtherType GetFrameEtherType(const std::vector<u8>& frame);
 
 /*
  * Returns the EAPoL type (Start / Logoff) of the specified 802.11 frame.
  * Note: The frame *must* be an EAPoL frame.
  */
-u16 GetEAPoLFrameType(std::span<const u8> frame);
+u16 GetEAPoLFrameType(const std::vector<u8>& frame);
 
 /*
  * Returns a deserialized NodeInfo structure from the information inside an EAPoL-Start packet
  * encapsulated in an 802.11 data frame.
  */
-NodeInfo DeserializeNodeInfoFromFrame(std::span<const u8> frame);
+NodeInfo DeserializeNodeInfoFromFrame(const std::vector<u8>& frame);
 
 /*
  * Returns a NodeInfo constructed from the data in the specified EAPoLNodeInfo.
@@ -167,6 +166,6 @@ std::vector<u8> GenerateEAPoLLogoffFrame(const MacAddress& mac_address, u16 netw
 /*
  * Returns a EAPoLLogoffPacket representing the specified 802.11-encapsulated data frame.
  */
-EAPoLLogoffPacket ParseEAPoLLogoffFrame(std::span<const u8> frame);
+EAPoLLogoffPacket ParseEAPoLLogoffFrame(const std::vector<u8>& frame);
 
 } // namespace Service::NWM

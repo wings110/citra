@@ -67,5 +67,6 @@ void QtMiiSelector::OpenDialog() {
              dialog.return_code, index);
 
     const auto mii_data = dialog.miis.at(index);
-    Finalize(dialog.return_code, dialog.return_code == 0 ? std::move(mii_data) : Mii::MiiData{});
+    Finalize(dialog.return_code,
+             dialog.return_code == 0 ? std::move(mii_data) : HLE::Applets::MiiData{});
 }

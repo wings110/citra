@@ -38,7 +38,7 @@ public:
 
     void Skip(unsigned size_in_words, bool set_to_null) {
         if (set_to_null)
-            std::memset(cmdbuf + index, 0, size_in_words * sizeof(u32));
+            memset(cmdbuf + index, 0, size_in_words * sizeof(u32));
         index += size_in_words;
     }
 };
@@ -210,8 +210,14 @@ inline void RequestBuilder::PushMappedBuffer(const Kernel::MappedBuffer& mapped_
 
 class RequestParser : public RequestHelperBase {
 public:
-    RequestParser(Kernel::HLERequestContext& context)
-        : RequestHelperBase(context, context.CommandHeader()) {}
+    RequestParser(Kernel::HLERequestContext& context, Header desired_header)
+        : RequestHelperBase(context, desired_header) {}
+
+    RequestParser(Kernel::HLERequestContext& context, u16 command_id, unsigned normal_params_size,
+                  unsigned translate_params_size)
+        : RequestParser(context,
+                        Header{MakeHeader(command_id, normal_params_size, translate_params_size)}) {
+    }
 
     RequestBuilder MakeBuilder(u32 normal_params_size, u32 translate_params_size,
                                bool validateHeader = true) {

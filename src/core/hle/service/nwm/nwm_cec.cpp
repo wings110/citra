@@ -11,9 +11,7 @@ namespace Service::NWM {
 
 NWM_CEC::NWM_CEC() : ServiceFramework("nwm::CEC") {
     static const FunctionInfo functions[] = {
-        // clang-format off
-        {0x000D, nullptr, "SendProbeRequest"},
-        // clang-format on
+        {0x000D0082, nullptr, "SendProbeRequest"},
     };
     RegisterHandlers(functions);
 }

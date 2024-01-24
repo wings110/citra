@@ -4,9 +4,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <string>
 
-namespace Common::Log {
+namespace Log {
 
 struct Entry;
 
@@ -18,4 +19,4 @@ void PrintMessage(const Entry& entry);
 void PrintColoredMessage(const Entry& entry);
 /// Formats and prints a log entry to the android logcat.
 void PrintMessageToLogcat(const Entry& entry);
-} // namespace Common::Log
+} // namespace Log

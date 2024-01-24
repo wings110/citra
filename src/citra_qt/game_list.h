@@ -12,10 +12,6 @@
 #include "common/common_types.h"
 #include "uisettings.h"
 
-namespace Service::FS {
-enum class MediaType : u32;
-}
-
 class GameListWorker;
 class GameListDir;
 class GameListSearchField;
@@ -41,8 +37,6 @@ enum class GameListOpenTarget {
     TEXTURE_DUMP = 4,
     TEXTURE_LOAD = 5,
     MODS = 6,
-    DLC_DATA = 7,
-    SHADER_CACHE = 8
 };
 
 class GameList : public QWidget {
@@ -88,7 +82,6 @@ signals:
     void OpenFolderRequested(u64 program_id, GameListOpenTarget target);
     void NavigateToGamedbEntryRequested(u64 program_id,
                                         const CompatibilityList& compatibility_list);
-    void OpenPerGameGeneralRequested(const QString file);
     void DumpRomFSRequested(QString game_path, u64 program_id);
     void OpenDirectory(const QString& directory);
     void AddDirectory();
@@ -108,17 +101,11 @@ private:
     void DonePopulating(const QStringList& watch_list);
 
     void PopupContextMenu(const QPoint& menu_location);
-    void PopupHeaderContextMenu(const QPoint& menu_location);
-    void AddGamePopup(QMenu& context_menu, const QString& path, const QString& name, u64 program_id,
-                      u64 extdata_id, Service::FS::MediaType media_type);
+    void AddGamePopup(QMenu& context_menu, const QString& path, u64 program_id, u64 extdata_id);
     void AddCustomDirPopup(QMenu& context_menu, QModelIndex selected);
     void AddPermDirPopup(QMenu& context_menu, QModelIndex selected);
-    void UpdateColumnVisibility();
 
     QString FindGameByProgramID(QStandardItem* current_item, u64 program_id, int role);
-
-    void changeEvent(QEvent*) override;
-    void RetranslateUI();
 
     GameListSearchField* search_field;
     GMainWindow* main_window = nullptr;

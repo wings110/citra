@@ -11,9 +11,7 @@ namespace Service::NWM {
 
 NWM_EXT::NWM_EXT() : ServiceFramework("nwm::EXT") {
     static const FunctionInfo functions[] = {
-        // clang-format off
-        {0x0008, nullptr, "ControlWirelessEnabled"},
-        // clang-format on
+        {0x00080040, nullptr, "ControlWirelessEnabled"},
     };
     RegisterHandlers(functions);
 }

@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include "common/arch.h"
-#if CITRA_ARCH(x86_64)
-
 #include <array>
 #include <bitset>
 #include <cstddef>
@@ -14,13 +11,13 @@
 #include <utility>
 #include <vector>
 #include <nihstro/shader_bytecode.h>
-#include <xbyak/xbyak.h>
+#include <xbyak.h>
+#include "common/bit_set.h"
 #include "common/common_types.h"
 #include "video_core/shader/shader.h"
 
 using nihstro::Instruction;
 using nihstro::OpCode;
-using nihstro::SourceRegister;
 using nihstro::SwizzlePattern;
 
 namespace Pica::Shader {
@@ -36,7 +33,7 @@ class JitShader : public Xbyak::CodeGenerator {
 public:
     JitShader();
 
-    void Run(const ShaderSetup& setup, UnitState& state, u32 offset) const {
+    void Run(const ShaderSetup& setup, UnitState& state, unsigned offset) const {
         program(&setup.uniforms, &state, instruction_labels[offset].getAddress());
     }
 
@@ -74,10 +71,10 @@ public:
     void Compile_SETE(Instruction instr);
 
 private:
-    void Compile_Block(u32 end);
+    void Compile_Block(unsigned end);
     void Compile_NextInstr();
 
-    void Compile_SwizzleSrc(Instruction instr, u32 src_num, SourceRegister src_reg,
+    void Compile_SwizzleSrc(Instruction instr, unsigned src_num, SourceRegister src_reg,
                             Xbyak::Xmm dest);
     void Compile_DestEnable(Instruction instr, Xbyak::Xmm dest);
 
@@ -123,15 +120,15 @@ private:
     /// Mapping of Pica VS instructions to pointers in the emitted code
     std::array<Xbyak::Label, MAX_PROGRAM_CODE_LENGTH> instruction_labels;
 
-    /// Labels pointing to the end of each nested LOOP block. Used by the BREAKC instruction to
-    /// break out of a loop.
-    std::vector<Xbyak::Label> loop_break_labels;
+    /// Label pointing to the end of the current LOOP block. Used by the BREAKC instruction to break
+    /// out of the loop.
+    std::optional<Xbyak::Label> loop_break_label;
 
     /// Offsets in code where a return needs to be inserted
-    std::vector<u32> return_offsets;
+    std::vector<unsigned> return_offsets;
 
-    u32 program_counter = 0; ///< Offset of the next instruction to decode
-    u8 loop_depth = 0;       ///< Depth of the (nested) loops currently compiled
+    unsigned program_counter = 0; ///< Offset of the next instruction to decode
+    bool looping = false;         ///< True if compiling a loop, used to check for nested loops
 
     using CompiledShader = void(const void* setup, void* state, const u8* start_addr);
     CompiledShader* program = nullptr;
@@ -141,5 +138,3 @@ private:
 };
 
 } // namespace Pica::Shader
-
-#endif

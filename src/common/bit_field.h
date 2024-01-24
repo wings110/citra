@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <limits>
 #include <type_traits>
+#include "common/common_funcs.h"
 #include "common/swap.h"
 
 /*

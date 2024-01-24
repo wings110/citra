@@ -8,6 +8,5 @@ namespace Service::APT::ErrCodes {
 enum {
     ParameterPresent = 2,
     InvalidAppletSlot = 4,
-    AppNotRunning = 11,
 };
 } // namespace Service::APT::ErrCodes

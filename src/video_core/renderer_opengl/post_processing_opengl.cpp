@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -10,9 +9,6 @@
 #include "common/file_util.h"
 #include "common/string_util.h"
 #include "video_core/renderer_opengl/post_processing_opengl.h"
-
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream.hpp>
 
 namespace OpenGL {
 
@@ -41,9 +37,9 @@ constexpr char dolphin_shader_header[] = R"(
 #define lerp mix
 
 // Output variable
-layout (location = 0) out float4 color;
+out float4 color;
 // Input coordinates
-layout (location = 0) in float2 frag_tex_coord;
+in float2 frag_tex_coord;
 // Resolution
 uniform float4 i_resolution;
 uniform float4 o_resolution;
@@ -197,9 +193,9 @@ std::string GetPostProcessingShaderCode(bool anaglyph, std::string_view shader) 
         return "";
     }
 
-    boost::iostreams::stream<boost::iostreams::file_descriptor_source> file;
-    FileUtil::OpenFStream<std::ios_base::in>(file, shader_path);
-    if (!file.is_open()) {
+    std::ifstream file;
+    OpenFStream(file, shader_path, std::ios_base::in);
+    if (!file) {
         return "";
     }
 

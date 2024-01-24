@@ -9,7 +9,6 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/string.hpp>
-#include <boost/serialization/weak_ptr.hpp>
 #include "common/common_types.h"
 #include "common/memory_ref.h"
 #include "core/hle/kernel/object.h"
@@ -29,8 +28,8 @@ public:
     std::string GetName() const override {
         return name;
     }
-    void SetName(std::string name_) {
-        name = std::move(name_);
+    void SetName(std::string name) {
+        this->name = std::move(name);
     }
 
     static constexpr HandleType HANDLE_TYPE = HandleType::SharedMemory;
@@ -99,7 +98,7 @@ private:
     /// Permission restrictions applied to other processes mapping the block.
     MemoryPermission other_permissions{};
     /// Process that created this shared memory block.
-    std::weak_ptr<Process> owner_process;
+    Process* owner_process;
     /// Address of shared memory block in the owner process if specified.
     VAddr base_address = 0;
     /// Name of shared memory object.

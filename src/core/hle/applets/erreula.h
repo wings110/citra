@@ -11,13 +11,11 @@ namespace HLE::Applets {
 
 class ErrEula final : public Applet {
 public:
-    explicit ErrEula(Service::APT::AppletId id, Service::APT::AppletId parent, bool preload,
-                     std::weak_ptr<Service::APT::AppletManager> manager)
-        : Applet(id, parent, preload, std::move(manager)) {}
+    explicit ErrEula(Service::APT::AppletId id, std::weak_ptr<Service::APT::AppletManager> manager)
+        : Applet(id, std::move(manager)) {}
 
-    ResultCode ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) override;
-    ResultCode Start(const Service::APT::MessageParameter& parameter) override;
-    ResultCode Finalize() override;
+    ResultCode ReceiveParameter(const Service::APT::MessageParameter& parameter) override;
+    ResultCode StartImpl(const Service::APT::AppletStartupParameter& parameter) override;
     void Update() override;
 
 private:
@@ -25,9 +23,6 @@ private:
     /// It holds the framebuffer info retrieved by the application with
     /// GSPGPU::ImportDisplayCaptureInfo
     std::shared_ptr<Kernel::SharedMemory> framebuffer_memory;
-
-    /// Parameter received by the applet on start.
-    std::vector<u8> startup_param;
 };
 
 } // namespace HLE::Applets

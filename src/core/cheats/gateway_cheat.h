@@ -6,8 +6,6 @@
 
 #include <atomic>
 #include <memory>
-#include <vector>
-#include "common/common_types.h"
 #include "core/cheats/cheat_base.h"
 
 namespace Cheats {

@@ -12,6 +12,9 @@
 #include "core/file_sys/archive_backend.h"
 #include "core/hle/result.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
+
 namespace FileSys {
 
 /// Archive backend for SDMC archive

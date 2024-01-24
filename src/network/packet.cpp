@@ -85,42 +85,42 @@ Packet& Packet::operator>>(u8& out_data) {
 }
 
 Packet& Packet::operator>>(s16& out_data) {
-    s16 value = 0;
+    s16 value;
     Read(&value, sizeof(value));
     out_data = ntohs(value);
     return *this;
 }
 
 Packet& Packet::operator>>(u16& out_data) {
-    u16 value = 0;
+    u16 value;
     Read(&value, sizeof(value));
     out_data = ntohs(value);
     return *this;
 }
 
 Packet& Packet::operator>>(s32& out_data) {
-    s32 value = 0;
+    s32 value;
     Read(&value, sizeof(value));
     out_data = ntohl(value);
     return *this;
 }
 
 Packet& Packet::operator>>(u32& out_data) {
-    u32 value = 0;
+    u32 value;
     Read(&value, sizeof(value));
     out_data = ntohl(value);
     return *this;
 }
 
 Packet& Packet::operator>>(s64& out_data) {
-    s64 value = 0;
+    s64 value;
     Read(&value, sizeof(value));
     out_data = ntohll(value);
     return *this;
 }
 
 Packet& Packet::operator>>(u64& out_data) {
-    u64 value = 0;
+    u64 value;
     Read(&value, sizeof(value));
     out_data = ntohll(value);
     return *this;

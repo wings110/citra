@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <array>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 #include "common/logging/log.h"
@@ -29,9 +28,12 @@ ParamPackage::ParamPackage(const std::string& serialized) {
         return;
     }
 
-    const auto pairs = Common::SplitString(serialized, PARAM_SEPARATOR);
+    std::vector<std::string> pairs;
+    Common::SplitString(serialized, PARAM_SEPARATOR, pairs);
+
     for (const std::string& pair : pairs) {
-        auto key_value = Common::SplitString(pair, KEY_VALUE_SEPARATOR);
+        std::vector<std::string> key_value;
+        Common::SplitString(pair, KEY_VALUE_SEPARATOR, key_value);
         if (key_value.size() != 2) {
             LOG_ERROR(Common, "invalid key pair {}", pair);
             continue;

@@ -18,12 +18,10 @@ public:
      * Creates an instance of the Applet subclass identified by the parameter.
      * and stores it in a global map.
      * @param id Id of the applet to create.
-     * @param parent Id of the applet's parent.
-     * @param preload Whether the applet is being preloaded.
      * @returns ResultCode Whether the operation was successful or not.
      */
-    static ResultCode Create(Service::APT::AppletId id, Service::APT::AppletId parent, bool preload,
-                             const std::shared_ptr<Service::APT::AppletManager>& manager);
+    static ResultCode Create(Service::APT::AppletId id,
+                             std::weak_ptr<Service::APT::AppletManager> manager);
 
     /**
      * Retrieves the Applet instance identified by the specified id.
@@ -37,17 +35,19 @@ public:
      * @param parameter Parameter data to handle.
      * @returns ResultCode Whether the operation was successful or not.
      */
-    ResultCode ReceiveParameter(const Service::APT::MessageParameter& parameter);
+    virtual ResultCode ReceiveParameter(const Service::APT::MessageParameter& parameter) = 0;
 
     /**
-     * Whether the applet is currently running.
+     * Handles the Applet start event, triggered from the application.
+     * @param parameter Parameter data to handle.
+     * @returns ResultCode Whether the operation was successful or not.
      */
-    [[nodiscard]] bool IsRunning() const;
+    ResultCode Start(const Service::APT::AppletStartupParameter& parameter);
 
     /**
-     * Whether the applet is currently active instead of the host application or not.
+     * Whether the applet is currently executing instead of the host application or not.
      */
-    [[nodiscard]] bool IsActive() const;
+    bool IsRunning() const;
 
     /**
      * Handles an update tick for the Applet, lets it update the screen, send commands, etc.
@@ -55,47 +55,30 @@ public:
     virtual void Update() = 0;
 
 protected:
-    Applet(Service::APT::AppletId id, Service::APT::AppletId parent, bool preload,
-           std::weak_ptr<Service::APT::AppletManager> manager)
-        : id(id), parent(parent), preload(preload), manager(std::move(manager)) {}
-
-    /**
-     * Handles a parameter from the application.
-     * @param parameter Parameter data to handle.
-     * @returns ResultCode Whether the operation was successful or not.
-     */
-    virtual ResultCode ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) = 0;
+    Applet(Service::APT::AppletId id, std::weak_ptr<Service::APT::AppletManager> manager)
+        : id(id), manager(std::move(manager)) {}
 
     /**
      * Handles the Applet start event, triggered from the application.
      * @param parameter Parameter data to handle.
      * @returns ResultCode Whether the operation was successful or not.
      */
-    virtual ResultCode Start(const Service::APT::MessageParameter& parameter) = 0;
-
-    /**
-     * Sends the LibAppletClosing signal to the application,
-     * along with the relevant data buffers.
-     */
-    virtual ResultCode Finalize() = 0;
+    virtual ResultCode StartImpl(const Service::APT::AppletStartupParameter& parameter) = 0;
 
     Service::APT::AppletId id;                    ///< Id of this Applet
-    Service::APT::AppletId parent;                ///< Id of this Applet's parent
-    bool preload;                                 ///< Whether the Applet is being preloaded.
     std::shared_ptr<std::vector<u8>> heap_memory; ///< Heap memory for this Applet
 
-    /// Whether this applet is running.
-    bool is_running = true;
-
-    /// Whether this applet is currently active instead of the host application or not.
-    bool is_active = false;
+    /// Whether this applet is currently running instead of the host application or not.
+    bool is_running = false;
 
     void SendParameter(const Service::APT::MessageParameter& parameter);
-    void CloseApplet(std::shared_ptr<Kernel::Object> object, const std::vector<u8>& buffer);
 
 private:
     std::weak_ptr<Service::APT::AppletManager> manager;
 };
+
+/// Returns whether a library applet is currently running
+bool IsLibraryAppletRunning();
 
 /// Initializes the HLE applets
 void Init();

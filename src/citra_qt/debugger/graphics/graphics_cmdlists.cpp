@@ -14,6 +14,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include "citra_qt/debugger/graphics/graphics_cmdlists.h"
+#include "citra_qt/util/spinbox.h"
 #include "citra_qt/util/util.h"
 #include "common/vector_math.h"
 #include "core/core.h"
@@ -129,7 +130,7 @@ void GPUCommandListWidget::OnCommandDoubleClicked(const QModelIndex& index) {
         COMMAND_IN_RANGE(command_id, texturing.texture1) ||
         COMMAND_IN_RANGE(command_id, texturing.texture2)) {
 
-        [[maybe_unused]] u32 texture_index;
+        unsigned texture_index;
         if (COMMAND_IN_RANGE(command_id, texturing.texture0)) {
             texture_index = 0;
         } else if (COMMAND_IN_RANGE(command_id, texturing.texture1)) {
@@ -167,7 +168,8 @@ void GPUCommandListWidget::SetCommandInfo(const QModelIndex& index) {
         const auto format = texture.format;
 
         const auto info = Pica::Texture::TextureInfo::FromPicaRegister(config, format);
-        const u8* src = system.Memory().GetPhysicalPointer(config.GetPhysicalAddress());
+        const u8* src =
+            Core::System::GetInstance().Memory().GetPhysicalPointer(config.GetPhysicalAddress());
         new_info_widget = new TextureInfoWidget(src, info);
     }
     if (command_info_widget) {
@@ -181,8 +183,8 @@ void GPUCommandListWidget::SetCommandInfo(const QModelIndex& index) {
 }
 #undef COMMAND_IN_RANGE
 
-GPUCommandListWidget::GPUCommandListWidget(Core::System& system_, QWidget* parent)
-    : QDockWidget(tr("Pica Command List"), parent), system{system_} {
+GPUCommandListWidget::GPUCommandListWidget(QWidget* parent)
+    : QDockWidget(tr("Pica Command List"), parent) {
     setObjectName(QStringLiteral("Pica Command List"));
     GPUCommandListModel* model = new GPUCommandListModel(this);
 

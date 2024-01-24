@@ -11,15 +11,11 @@ namespace Ui {
 class ConfigureAudio;
 }
 
-namespace ConfigurationShared {
-enum class CheckState;
-}
-
 class ConfigureAudio : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureAudio(bool is_powered_on, QWidget* parent = nullptr);
+    explicit ConfigureAudio(QWidget* parent = nullptr);
     ~ConfigureAudio() override;
 
     void ApplyConfiguration();
@@ -30,14 +26,9 @@ private:
     void UpdateAudioOutputDevices(int sink_index);
     void UpdateAudioInputDevices(int index);
 
-    void SetOutputTypeFromSinkType();
-    void SetOutputDeviceFromDeviceID();
-    void SetInputTypeFromInputType();
-    void SetInputDeviceFromDeviceID();
+    void SetOutputSinkFromSinkID();
+    void SetAudioDeviceFromDeviceID();
     void SetVolumeIndicatorText(int percentage);
 
-    void SetupPerGameUI();
-
-    ConfigurationShared::CheckState audio_stretching;
     std::unique_ptr<Ui::ConfigureAudio> ui;
 };

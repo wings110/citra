@@ -3,7 +3,7 @@
 // Refer to the license.txt file included.
 #if defined(HAVE_MF) || defined(HAVE_FFMPEG)
 
-#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch.hpp>
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/memory.h"
@@ -20,8 +20,7 @@
 #include "audio_fixures.h"
 
 TEST_CASE("DSP HLE Audio Decoder", "[audio_core]") {
-    Core::System system;
-    Memory::MemorySystem memory{system};
+    Memory::MemorySystem memory;
     SECTION("decoder should produce correct samples") {
         auto decoder =
 #ifdef HAVE_MF
@@ -29,26 +28,26 @@ TEST_CASE("DSP HLE Audio Decoder", "[audio_core]") {
 #elif HAVE_FFMPEG
             std::make_unique<AudioCore::HLE::FFMPEGDecoder>(memory);
 #endif
-        AudioCore::HLE::BinaryMessage request{};
+        AudioCore::HLE::BinaryRequest request;
 
-        request.header.codec = AudioCore::HLE::DecoderCodec::DecodeAAC;
-        request.header.cmd = AudioCore::HLE::DecoderCommand::Init;
+        request.codec = AudioCore::HLE::DecoderCodec::AAC;
+        request.cmd = AudioCore::HLE::DecoderCommand::Init;
         // initialize decoder
-        std::optional<AudioCore::HLE::BinaryMessage> response = decoder->ProcessRequest(request);
+        std::optional<AudioCore::HLE::BinaryResponse> response = decoder->ProcessRequest(request);
 
-        request.header.cmd = AudioCore::HLE::DecoderCommand::EncodeDecode;
+        request.cmd = AudioCore::HLE::DecoderCommand::Decode;
         u8* fcram = memory.GetFCRAMPointer(0);
 
-        std::memcpy(fcram, fixure_buffer, fixure_buffer_size);
-        request.decode_aac_request.src_addr = Memory::FCRAM_PADDR;
-        request.decode_aac_request.dst_addr_ch0 = Memory::FCRAM_PADDR + 1024;
-        request.decode_aac_request.dst_addr_ch1 = Memory::FCRAM_PADDR + 1048576; // 1 MB
-        request.decode_aac_request.size = fixure_buffer_size;
+        memcpy(fcram, fixure_buffer, fixure_buffer_size);
+        request.src_addr = Memory::FCRAM_PADDR;
+        request.dst_addr_ch0 = Memory::FCRAM_PADDR + 1024;
+        request.dst_addr_ch1 = Memory::FCRAM_PADDR + 1048576; // 1 MB
+        request.size = fixure_buffer_size;
 
         response = decoder->ProcessRequest(request);
         response = decoder->ProcessRequest(request);
         // remove this line
-        request.decode_aac_request.src_addr = Memory::FCRAM_PADDR;
+        request.src_addr = Memory::FCRAM_PADDR;
     }
 }
 

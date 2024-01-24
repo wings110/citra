@@ -20,14 +20,9 @@
 #else
 #ifdef _WIN32
 #define EMU_DATA_DIR "Citra"
-#elif defined(__APPLE__)
-#include <TargetConditionals.h>
-#if TARGET_OS_IPHONE
-#define APPLE_EMU_DATA_DIR "Documents" DIR_SEP "Citra"
-#else
-#define APPLE_EMU_DATA_DIR "Library" DIR_SEP "Application Support" DIR_SEP "Citra"
-#endif
-// For compatibility with XDG paths.
+#elif ANDROID
+// On Android internal storage is mounted as "/sdcard"
+#define SDCARD_DIR "sdcard"
 #define EMU_DATA_DIR "citra-emu"
 #else
 #define EMU_DATA_DIR "citra-emu"

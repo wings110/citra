@@ -9,12 +9,9 @@
 
 SequenceDialog::SequenceDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("Enter a hotkey"));
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     key_sequence = new QKeySequenceEdit;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-    key_sequence->setMaximumSequenceLength(1);
-    key_sequence->setFinishingKeyCombinations({});
-#endif
 
     auto* const buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     buttons->setCenterButtons(true);
@@ -30,12 +27,8 @@ SequenceDialog::SequenceDialog(QWidget* parent) : QDialog(parent) {
 SequenceDialog::~SequenceDialog() = default;
 
 QKeySequence SequenceDialog::GetSequence() {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-    return key_sequence->keySequence();
-#else
     // Only the first key is returned. The other 3, if present, are ignored.
     return QKeySequence(key_sequence->keySequence()[0]);
-#endif
 }
 
 bool SequenceDialog::focusNextPrevChild(bool next) {

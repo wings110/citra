@@ -175,19 +175,23 @@ static_assert(sizeof(SoftwareKeyboardConfig) == 0x400, "Software Keyboard Config
 
 class SoftwareKeyboard final : public Applet {
 public:
-    SoftwareKeyboard(Service::APT::AppletId id, Service::APT::AppletId parent, bool preload,
-                     std::weak_ptr<Service::APT::AppletManager> manager)
-        : Applet(id, parent, preload, std::move(manager)) {}
+    SoftwareKeyboard(Service::APT::AppletId id, std::weak_ptr<Service::APT::AppletManager> manager)
+        : Applet(id, std::move(manager)) {}
 
-    ResultCode ReceiveParameterImpl(const Service::APT::MessageParameter& parameter) override;
-    ResultCode Start(const Service::APT::MessageParameter& parameter) override;
-    ResultCode Finalize() override;
+    ResultCode ReceiveParameter(const Service::APT::MessageParameter& parameter) override;
+    ResultCode StartImpl(const Service::APT::AppletStartupParameter& parameter) override;
     void Update() override;
 
     /**
      * Draws a keyboard to the current bottom screen framebuffer.
      */
     void DrawScreenKeyboard();
+
+    /**
+     * Sends the LibAppletClosing signal to the application,
+     * along with the relevant data buffers.
+     */
+    void Finalize();
 
 private:
     Frontend::KeyboardConfig ToFrontendConfig(const SoftwareKeyboardConfig& config) const;

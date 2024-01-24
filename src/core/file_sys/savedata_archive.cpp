@@ -9,6 +9,9 @@
 #include "core/file_sys/path_parser.h"
 #include "core/file_sys/savedata_archive.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// FileSys namespace
+
 namespace FileSys {
 
 class SaveDataDelayGenerator : public DelayGenerator {
@@ -90,7 +93,8 @@ ResultVal<std::unique_ptr<FileBackend>> SaveDataArchive::OpenFile(const Path& pa
     }
 
     std::unique_ptr<DelayGenerator> delay_generator = std::make_unique<SaveDataDelayGenerator>();
-    return std::make_unique<DiskFile>(std::move(file), mode, std::move(delay_generator));
+    auto disk_file = std::make_unique<DiskFile>(std::move(file), mode, std::move(delay_generator));
+    return MakeResult<std::unique_ptr<FileBackend>>(std::move(disk_file));
 }
 
 ResultCode SaveDataArchive::DeleteFile(const Path& path) const {
@@ -342,7 +346,8 @@ ResultVal<std::unique_ptr<DirectoryBackend>> SaveDataArchive::OpenDirectory(
         break; // Expected 'success' case
     }
 
-    return std::make_unique<DiskDirectory>(full_path);
+    auto directory = std::make_unique<DiskDirectory>(full_path);
+    return MakeResult<std::unique_ptr<DirectoryBackend>>(std::move(directory));
 }
 
 u64 SaveDataArchive::GetFreeBytes() const {

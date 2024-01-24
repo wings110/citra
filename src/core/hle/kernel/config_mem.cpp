@@ -6,6 +6,8 @@
 #include "common/archives.h"
 #include "core/hle/kernel/config_mem.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 SERIALIZE_EXPORT_IMPL(ConfigMem::Handler)
 
 namespace ConfigMem {

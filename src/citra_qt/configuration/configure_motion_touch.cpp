@@ -23,9 +23,8 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
     status_label = new QLabel(tr("Communicating with the server..."));
     cancel_button = new QPushButton(tr("Cancel"));
     connect(cancel_button, &QPushButton::clicked, this, [this] {
-        if (!completed) {
+        if (!completed)
             job->Stop();
-        }
         accept();
     });
     layout->addWidget(status_label);
@@ -47,9 +46,6 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
             case CalibrationConfigurationJob::Status::Completed:
                 text = tr("Configuration completed!");
                 break;
-            default:
-                LOG_ERROR(Frontend, "Unknown calibration status {}", status);
-                break;
             }
             QMetaObject::invokeMethod(this, "UpdateLabelText", Q_ARG(QString, text));
             if (status == CalibrationConfigurationJob::Status::Completed) {
@@ -67,33 +63,31 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
 
 CalibrationConfigurationDialog::~CalibrationConfigurationDialog() = default;
 
-void CalibrationConfigurationDialog::UpdateLabelText(const QString& text) {
+void CalibrationConfigurationDialog::UpdateLabelText(QString text) {
     status_label->setText(text);
 }
 
-void CalibrationConfigurationDialog::UpdateButtonText(const QString& text) {
+void CalibrationConfigurationDialog::UpdateButtonText(QString text) {
     cancel_button->setText(text);
 }
 
-constexpr std::array<std::pair<const char*, const char*>, 3> MotionProviders = {{
-    {"motion_emu", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "Mouse (Right Click)")},
-    {"cemuhookudp", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "CemuhookUDP")},
-    {"sdl", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "SDL")},
-}};
+const std::array<std::pair<const char*, const char*>, 3> MotionProviders = {
+    {{"motion_emu", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "Mouse (Right Click)")},
+     {"cemuhookudp", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "CemuhookUDP")},
+     {"sdl", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "SDL")}}};
 
-constexpr std::array<std::pair<const char*, const char*>, 2> TouchProviders = {{
-    {"emu_window", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "Emulator Window")},
-    {"cemuhookudp", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "CemuhookUDP")},
-}};
+const std::array<std::pair<const char*, const char*>, 2> TouchProviders = {
+    {{"emu_window", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "Emulator Window")},
+     {"cemuhookudp", QT_TRANSLATE_NOOP("ConfigureMotionTouch", "CemuhookUDP")}}};
 
 ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigureMotionTouch>()),
       timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()) {
     ui->setupUi(this);
-    for (const auto& [provider, name] : MotionProviders) {
+    for (auto [provider, name] : MotionProviders) {
         ui->motion_provider->addItem(tr(name), QString::fromUtf8(provider));
     }
-    for (const auto& [provider, name] : TouchProviders) {
+    for (auto [provider, name] : TouchProviders) {
         ui->touch_provider->addItem(tr(name), QString::fromUtf8(provider));
     }
 
@@ -105,9 +99,9 @@ ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent)
            "style=\"text-decoration: underline; color:#039be5;\">Learn More</span></a>"));
 
     timeout_timer->setSingleShot(true);
-    connect(timeout_timer.get(), &QTimer::timeout, this, [this]() { SetPollingResult({}, true); });
+    connect(timeout_timer.get(), &QTimer::timeout, [this]() { SetPollingResult({}, true); });
 
-    connect(poll_timer.get(), &QTimer::timeout, this, [this]() {
+    connect(poll_timer.get(), &QTimer::timeout, [this]() {
         Common::ParamPackage params;
         for (auto& poller : device_pollers) {
             params = poller->GetNextInput();
@@ -128,10 +122,10 @@ ConfigureMotionTouch::ConfigureMotionTouch(QWidget* parent)
 ConfigureMotionTouch::~ConfigureMotionTouch() = default;
 
 void ConfigureMotionTouch::SetConfiguration() {
-    const Common::ParamPackage motion_param(Settings::values.current_input_profile.motion_device);
-    const Common::ParamPackage touch_param(Settings::values.current_input_profile.touch_device);
-    const std::string motion_engine = motion_param.Get("engine", "motion_emu");
-    const std::string touch_engine = touch_param.Get("engine", "emu_window");
+    Common::ParamPackage motion_param(Settings::values.current_input_profile.motion_device);
+    Common::ParamPackage touch_param(Settings::values.current_input_profile.touch_device);
+    std::string motion_engine = motion_param.Get("engine", "motion_emu");
+    std::string touch_engine = touch_param.Get("engine", "emu_window");
 
     ui->motion_provider->setCurrentIndex(
         ui->motion_provider->findData(QString::fromStdString(motion_engine)));
@@ -162,8 +156,8 @@ void ConfigureMotionTouch::SetConfiguration() {
 }
 
 void ConfigureMotionTouch::UpdateUiDisplay() {
-    const std::string motion_engine = ui->motion_provider->currentData().toString().toStdString();
-    const std::string touch_engine = ui->touch_provider->currentData().toString().toStdString();
+    std::string motion_engine = ui->motion_provider->currentData().toString().toStdString();
+    std::string touch_engine = ui->touch_provider->currentData().toString().toStdString();
 
     if (motion_engine == "motion_emu") {
         ui->motion_sensitivity_label->setVisible(true);
@@ -185,8 +179,9 @@ void ConfigureMotionTouch::UpdateUiDisplay() {
         ui->touch_calibration->setVisible(true);
         ui->touch_calibration_config->setVisible(true);
         ui->touch_calibration_label->setVisible(true);
-        ui->touch_calibration->setText(
-            QStringLiteral("(%1, %2) - (%3, %4)").arg(min_x).arg(min_y).arg(max_x).arg(max_y));
+        ui->touch_calibration->setText(QStringLiteral("(%1, %2) - (%3, %4)")
+                                           .arg(QString::number(min_x), QString::number(min_y),
+                                                QString::number(max_x), QString::number(max_y)));
     } else {
         ui->touch_calibration->setVisible(false);
         ui->touch_calibration_config->setVisible(false);
@@ -201,11 +196,13 @@ void ConfigureMotionTouch::UpdateUiDisplay() {
 }
 
 void ConfigureMotionTouch::ConnectEvents() {
-    connect(ui->motion_provider, qOverload<int>(&QComboBox::currentIndexChanged), this,
+    connect(ui->motion_provider,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
             [this]([[maybe_unused]] int index) { UpdateUiDisplay(); });
-    connect(ui->touch_provider, qOverload<int>(&QComboBox::currentIndexChanged), this,
+    connect(ui->touch_provider,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
             [this]([[maybe_unused]] int index) { UpdateUiDisplay(); });
-    connect(ui->motion_controller_button, &QPushButton::clicked, this, [this]() {
+    connect(ui->motion_controller_button, &QPushButton::clicked, [=]() {
         if (QMessageBox::information(this, tr("Information"),
                                      tr("After pressing OK, press a button on the controller whose "
                                         "motion you want to track."),
@@ -213,7 +210,7 @@ void ConfigureMotionTouch::ConnectEvents() {
             ui->motion_controller_button->setText(tr("[press button]"));
             ui->motion_controller_button->setFocus();
 
-            input_setter = [this](const Common::ParamPackage& params) {
+            input_setter = [=](const Common::ParamPackage& params) {
                 guid = params.Get("guid", "0");
                 port = params.Get("port", 0);
             };
@@ -234,12 +231,9 @@ void ConfigureMotionTouch::ConnectEvents() {
             &ConfigureMotionTouch::OnConfigureTouchCalibration);
     connect(ui->touch_from_button_config_btn, &QPushButton::clicked, this,
             &ConfigureMotionTouch::OnConfigureTouchFromButton);
-    connect(ui->buttonBox, &QDialogButtonBox::accepted, this,
-            &ConfigureMotionTouch::ApplyConfiguration);
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, [this] {
-        if (CanCloseDialog()) {
+        if (CanCloseDialog())
             reject();
-        }
     });
 }
 
@@ -278,15 +272,15 @@ void ConfigureMotionTouch::OnCemuhookUDPTest() {
 void ConfigureMotionTouch::OnConfigureTouchCalibration() {
     ui->touch_calibration_config->setEnabled(false);
     ui->touch_calibration_config->setText(tr("Configuring"));
-    CalibrationConfigurationDialog dialog(
+    CalibrationConfigurationDialog* dialog = new CalibrationConfigurationDialog(
         this, ui->udp_server->text().toStdString(), static_cast<u16>(ui->udp_port->text().toUInt()),
         static_cast<u8>(ui->udp_pad_index->currentIndex()), 24872);
-    dialog.exec();
-    if (dialog.completed) {
-        min_x = dialog.min_x;
-        min_y = dialog.min_y;
-        max_x = dialog.max_x;
-        max_y = dialog.max_y;
+    dialog->exec();
+    if (dialog->completed) {
+        min_x = dialog->min_x;
+        min_y = dialog->min_y;
+        max_x = dialog->max_x;
+        max_y = dialog->max_y;
         LOG_INFO(Frontend,
                  "UDP touchpad calibration config success: min_x={}, min_y={}, max_x={}, max_y={}",
                  min_x, min_y, max_x, max_y);
@@ -299,11 +293,10 @@ void ConfigureMotionTouch::OnConfigureTouchCalibration() {
 }
 
 void ConfigureMotionTouch::closeEvent(QCloseEvent* event) {
-    if (CanCloseDialog()) {
+    if (CanCloseDialog())
         event->accept();
-    } else {
+    else
         event->ignore();
-    }
 }
 
 void ConfigureMotionTouch::ShowUDPTestResult(bool result) {
@@ -349,15 +342,16 @@ bool ConfigureMotionTouch::CanCloseDialog() {
 }
 
 void ConfigureMotionTouch::ApplyConfiguration() {
-    if (!CanCloseDialog()) {
+    if (!CanCloseDialog())
         return;
-    }
 
     std::string motion_engine = ui->motion_provider->currentData().toString().toStdString();
     std::string touch_engine = ui->touch_provider->currentData().toString().toStdString();
 
-    Common::ParamPackage motion_param{};
+    Common::ParamPackage motion_param{}, touch_param{};
     motion_param.Set("engine", motion_engine);
+    touch_param.Set("engine", touch_engine);
+
     if (motion_engine == "motion_emu") {
         motion_param.Set("sensitivity", static_cast<float>(ui->motion_sensitivity->value()));
     } else if (motion_engine == "sdl") {
@@ -365,8 +359,6 @@ void ConfigureMotionTouch::ApplyConfiguration() {
         motion_param.Set("port", port);
     }
 
-    Common::ParamPackage touch_param{};
-    touch_param.Set("engine", touch_engine);
     if (touch_engine == "cemuhookudp") {
         touch_param.Set("min_x", min_x);
         touch_param.Set("min_y", min_y);

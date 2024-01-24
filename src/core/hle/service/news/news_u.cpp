@@ -11,9 +11,7 @@ namespace Service::NEWS {
 
 NEWS_U::NEWS_U() : ServiceFramework("news:u", 1) {
     const FunctionInfo functions[] = {
-        // clang-format off
-        {0x0001, nullptr, "AddNotification"},
-        // clang-format on
+        {0x000100C8, nullptr, "AddNotification"},
     };
     RegisterHandlers(functions);
 }

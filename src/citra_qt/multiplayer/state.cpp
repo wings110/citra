@@ -7,6 +7,7 @@
 #include <QIcon>
 #include <QMessageBox>
 #include <QStandardItemModel>
+#include "citra_qt/game_list.h"
 #include "citra_qt/multiplayer/client_room.h"
 #include "citra_qt/multiplayer/direct_connect.h"
 #include "citra_qt/multiplayer/host_room.h"
@@ -15,12 +16,12 @@
 #include "citra_qt/multiplayer/state.h"
 #include "citra_qt/uisettings.h"
 #include "citra_qt/util/clickable_label.h"
+#include "common/announce_multiplayer_room.h"
 #include "common/logging/log.h"
 
-MultiplayerState::MultiplayerState(Core::System& system_, QWidget* parent,
-                                   QStandardItemModel* game_list_model, QAction* leave_room,
-                                   QAction* show_room)
-    : QWidget(parent), system{system_}, game_list_model(game_list_model), leave_room(leave_room),
+MultiplayerState::MultiplayerState(QWidget* parent, QStandardItemModel* game_list_model,
+                                   QAction* leave_room, QAction* show_room)
+    : QWidget(parent), game_list_model(game_list_model), leave_room(leave_room),
       show_room(show_room) {
     if (auto member = Network::GetRoomMember().lock()) {
         // register the network structs to use in slots and signals
@@ -36,7 +37,7 @@ MultiplayerState::MultiplayerState(Core::System& system_, QWidget* parent,
     qRegisterMetaType<Network::RoomMember::State>();
     qRegisterMetaType<Network::RoomMember::Error>();
     qRegisterMetaType<Common::WebResult>();
-    announce_multiplayer_session = std::make_shared<Network::AnnounceMultiplayerSession>();
+    announce_multiplayer_session = std::make_shared<Core::AnnounceMultiplayerSession>();
     announce_multiplayer_session->BindErrorCallback(
         [this](const Common::WebResult& result) { emit AnnounceFailed(result); });
     connect(this, &MultiplayerState::AnnounceFailed, this, &MultiplayerState::OnAnnounceFailed);
@@ -204,14 +205,14 @@ static void BringWidgetToFront(QWidget* widget) {
 
 void MultiplayerState::OnViewLobby() {
     if (lobby == nullptr) {
-        lobby = new Lobby(system, this, game_list_model, announce_multiplayer_session);
+        lobby = new Lobby(this, game_list_model, announce_multiplayer_session);
     }
     BringWidgetToFront(lobby);
 }
 
 void MultiplayerState::OnCreateRoom() {
     if (host_room == nullptr) {
-        host_room = new HostRoomWindow(system, this, game_list_model, announce_multiplayer_session);
+        host_room = new HostRoomWindow(this, game_list_model, announce_multiplayer_session);
     }
     BringWidgetToFront(host_room);
 }
@@ -230,9 +231,8 @@ bool MultiplayerState::OnCloseRoom() {
         if (room->GetState() != Network::Room::State::Open) {
             return true;
         }
-
         // Save ban list
-        UISettings::values.ban_list = room->GetBanList();
+        UISettings::values.ban_list = std::move(room->GetBanList());
 
         room->Destroy();
         announce_multiplayer_session->Stop();
@@ -275,7 +275,7 @@ void MultiplayerState::OnOpenNetworkRoom() {
 
 void MultiplayerState::OnDirectConnectToRoom() {
     if (direct_connect == nullptr) {
-        direct_connect = new DirectConnectWindow(system, this);
+        direct_connect = new DirectConnectWindow(this);
     }
     BringWidgetToFront(direct_connect);
 }

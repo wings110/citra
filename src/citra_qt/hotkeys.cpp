@@ -2,13 +2,13 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <QKeySequence>
 #include <QShortcut>
 #include <QtGlobal>
 #include "citra_qt/hotkeys.h"
 #include "citra_qt/uisettings.h"
 
 HotkeyRegistry::HotkeyRegistry() = default;
-
 HotkeyRegistry::~HotkeyRegistry() = default;
 
 void HotkeyRegistry::SaveHotkeys() {
@@ -17,8 +17,8 @@ void HotkeyRegistry::SaveHotkeys() {
         for (const auto& hotkey : group.second) {
             UISettings::values.shortcuts.push_back(
                 {hotkey.first, group.first,
-                 UISettings::ContextualShortcut(
-                     {hotkey.second.keyseq.toString(), hotkey.second.context})});
+                 UISettings::ContextualShortcut(hotkey.second.keyseq.toString(),
+                                                hotkey.second.context)});
         }
     }
 }
@@ -28,10 +28,9 @@ void HotkeyRegistry::LoadHotkeys() {
     // beginGroup()
     for (auto shortcut : UISettings::values.shortcuts) {
         Hotkey& hk = hotkey_groups[shortcut.group][shortcut.name];
-        if (!shortcut.shortcut.keyseq.isEmpty()) {
-            hk.keyseq =
-                QKeySequence::fromString(shortcut.shortcut.keyseq, QKeySequence::NativeText);
-            hk.context = static_cast<Qt::ShortcutContext>(shortcut.shortcut.context);
+        if (!shortcut.shortcut.first.isEmpty()) {
+            hk.keyseq = QKeySequence::fromString(shortcut.shortcut.first, QKeySequence::NativeText);
+            hk.context = static_cast<Qt::ShortcutContext>(shortcut.shortcut.second);
         }
         if (hk.shortcut) {
             hk.shortcut->disconnect();
@@ -40,12 +39,11 @@ void HotkeyRegistry::LoadHotkeys() {
     }
 }
 
-QShortcut* HotkeyRegistry::GetHotkey(const QString& group, const QString& action, QObject* widget) {
+QShortcut* HotkeyRegistry::GetHotkey(const QString& group, const QString& action, QWidget* widget) {
     Hotkey& hk = hotkey_groups[group][action];
 
-    if (!hk.shortcut) {
+    if (!hk.shortcut)
         hk.shortcut = new QShortcut(hk.keyseq, widget, nullptr, nullptr, hk.context);
-    }
 
     return hk.shortcut;
 }

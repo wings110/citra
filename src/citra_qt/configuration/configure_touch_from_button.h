@@ -9,7 +9,7 @@
 #include <optional>
 #include <vector>
 #include <QDialog>
-#include "common/settings.h"
+#include "core/settings.h"
 
 class QItemSelection;
 class QModelIndex;
@@ -50,8 +50,8 @@ public slots:
     void SetCoordinates(int dot_id, const QPoint& pos);
 
 protected:
-    void showEvent(QShowEvent* ev) override;
-    void keyPressEvent(QKeyEvent* event) override;
+    virtual void showEvent(QShowEvent* ev) override;
+    virtual void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
     void NewMapping();
@@ -72,7 +72,7 @@ private:
     void SaveCurrentMapping();
 
     std::unique_ptr<Ui::ConfigureTouchFromButton> ui;
-    QStandardItemModel* binding_list_model;
+    std::unique_ptr<QStandardItemModel> binding_list_model;
     std::vector<Settings::TouchFromButtonMap> touch_maps;
     int selected_index;
 
