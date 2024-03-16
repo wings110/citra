@@ -88,3 +88,6 @@
 [submodule "oaknut"]
 	path = externals/oaknut
 	url = https://github.com/merryhime/oaknut.git
+[submodule "externals/ffmpeg"]
+	path = externals/ffmpeg
+	url = https://github.com/FFmpeg/FFmpeg
