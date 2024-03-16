@@ -4,9 +4,6 @@
 [submodule "nihstro"]
     path = externals/nihstro
     url = https://github.com/libretro-fork/nihstro.git
-[submodule "soundtouch"]
-    path = externals/soundtouch
-    url = https://gitlab.com/soundtouch/soundtouch.git
 [submodule "catch"]
     path = externals/catch
     url = https://github.com/philsquared/Catch.git
