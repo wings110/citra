@@ -9,7 +9,7 @@
     url = https://github.com/philsquared/Catch.git
 [submodule "soundtouch"]
     path = externals/soundtouch
-    url = https://codeberg.org/soundtouch/soundtouch.git
+    url = https://git.zaroz.cloud/nintendo-back-up/citra/citra-ext-soundtouch.git
 [submodule "dynarmic"]
     path = externals/dynarmic
     url = https://github.com/lioncash/dynarmic.git
